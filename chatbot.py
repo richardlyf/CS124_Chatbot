@@ -5,6 +5,7 @@
 import movielens
 
 import numpy as np
+import re
 
 
 class Chatbot:
@@ -120,7 +121,14 @@ class Chatbot:
       :param text: a user-supplied line of text that may contain movie titles
       :returns: list of movie titles that are potentially in the text
       """
-      return []
+      titles = []
+
+      quote_pat = '\"(?P<title>[^\""]+)\"'
+      e_matches = re.findall(quote_pat, text)
+      for title in e_matches:
+        titles.append(title)
+
+      return titles
 
     def find_movies_by_title(self, title):
       """ Given a movie title, return a list of indices of matching movies.
