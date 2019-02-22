@@ -6,6 +6,8 @@ import movielens
 
 import numpy as np
 
+import PorterStemmer as ps
+
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
@@ -95,6 +97,7 @@ class Chatbot:
         response = "I processed {} in creative mode!!".format(line)
       else:
         response = "I processed {} in starter mode!!".format(line)
+        self.extract_sentiment(line)
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -158,6 +161,21 @@ class Chatbot:
       :param text: a user-supplied line of text
       :returns: a numerical value for the sentiment of the text
       """
+      stemmer = ps.PorterStemmer()
+      output = ''
+      word = ''
+      for c in text:
+          if c.isalpha():
+              word += c.lower()
+          else:
+              if word:
+                  output += stemmer.stem(word, 0,len(word)-1)
+                  word = ''
+              output += c.lower()
+
+      print(output)
+      words = text.split()
+      print(words)
       return 0
 
     def extract_sentiment_for_movies(self, text):
@@ -261,13 +279,15 @@ class Chatbot:
 
       :returns: the cosine similarity between the two vectors
       """
-      #############################################################################
-      # TODO: Compute cosine similarity between the two vectors.
-      #############################################################################
+      
       similarity = 0
-      #############################################################################
-      #                             END OF YOUR CODE                              #
-      #############################################################################
+      norm1 = np.sqrt(np.sum(u**2))
+      norm2 = np.sqrt(np.sum(v**2))
+      u = u / norm1
+      v = v / norm2
+
+      similarity = u.dot(v)
+
       return similarity
 
 
