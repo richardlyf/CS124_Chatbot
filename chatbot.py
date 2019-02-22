@@ -204,15 +204,29 @@ class Chatbot:
       :returns: a numerical value for the sentiment of the text
       """
       # Naive implementation of just counting positive words vs negative words
+      negations = ['don\'t', 'not', 'never', 'none', 'nothing', 'hardly', 'didn\'t']
+      negation_scale = 1
+
       words_stemmed = self.stem_text(text)
       words = words_stemmed.split()
       posCount = 0
+      print(words)
       for word in words:
+          # All words after the negation will take on its inverted value
+          if word in negations:
+              negation_scale *= -1
+
+          # Reset the negation scale to 1 if at end punctuation
+          if not word[len(word) - 1].isalpha():
+              negation_scale = 1
+
           if word in self.sentiment:
               if self.sentiment[word] == 'pos':
-                  posCount += 1
+                  print("Word: " + word + " score: " + str(negation_scale))
+                  posCount += negation_scale
               else:
-                  posCount -= 1
+                  print("Word: " + word + " score: " + str(-negation_scale))
+                  posCount -= negation_scale
 
       if posCount != 0:
           posCount = posCount / abs(posCount)
@@ -375,21 +389,30 @@ class Chatbot:
       :returns: a list of k movie indices corresponding to movies in ratings_matrix,
         in descending order of recommendation
       """
-
-      #######################################################################################
-      # TODO: Implement a recommendation function that takes a vector user_ratings          #
-      # and matrix ratings_matrix and outputs a list of movies recommended by the chatbot.  #
-      #                                                                                     #
-      # For starter mode, you should use item-item collaborative filtering                  #
-      # with cosine similarity, no mean-centering, and no normalization of scores.          #
-      #######################################################################################
-
-      # Populate this list with k movie indices to recommend to the user.
       recommendations = []
+      # Get the list of indices where the movie is rated and unrated
+      unrated_index = np.where(user_ratings == 0)[0]
+      rated_index = np.where(user_ratings != 0)[0]
 
-      #############################################################################
-      #                             END OF YOUR CODE                              #
-      #############################################################################
+      # For each movie index of an unrated movie
+      for i in unrated_index:
+          unrated_vec = ratings_matrix[i]
+          score = 0
+
+          # For each movie index rated by the user
+          for j in rated_index:
+              rated_rating = user_ratings[j]
+              rated_vec = ratings_matrix[j]
+              score += rated_rating * self.similarity(unrated_vec, rated_vec)
+
+          # Add score to the recommendations as a tuple (score of unrated movie, unrated movie index)
+          recommendations.append((score, i))
+
+      # Sort the list in descending order and take top k
+      recommendations = sorted(recommendations)[::-1][:k]
+      # Extract and keep only the movie index
+      recommendations = [elem[1] for elem in recommendations]
+
       return recommendations
 
 
