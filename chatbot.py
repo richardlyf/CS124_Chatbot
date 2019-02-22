@@ -359,16 +359,7 @@ class Chatbot:
 
       :returns: the cosine similarity between the two vectors
       """
-
-      similarity = 0
-      norm1 = np.sqrt(np.sum(u**2))
-      norm2 = np.sqrt(np.sum(v**2))
-      u = u / norm1
-      v = v / norm2
-
-      similarity = u.dot(v)
-
-      return similarity
+      return np.dot (u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
 
 
     def recommend(self, user_ratings, ratings_matrix, k=10, creative=False):
