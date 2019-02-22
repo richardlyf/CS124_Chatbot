@@ -5,6 +5,7 @@
 import movielens
 
 import numpy as np
+import re
 
 import PorterStemmer as ps
 
@@ -22,6 +23,7 @@ class Chatbot:
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
+
       self.sentiment = movielens.sentiment()
 
       #############################################################################
@@ -123,7 +125,14 @@ class Chatbot:
       :param text: a user-supplied line of text that may contain movie titles
       :returns: list of movie titles that are potentially in the text
       """
-      return []
+      titles = []
+
+      quote_pat = '\"(?P<title>[^\""]+)\"'
+      e_matches = re.findall(quote_pat, text)
+      for title in e_matches:
+        titles.append(title)
+
+      return titles
 
     def find_movies_by_title(self, title):
       """ Given a movie title, return a list of indices of matching movies.
@@ -141,7 +150,37 @@ class Chatbot:
       :param title: a string containing a movie title
       :returns: a list of indices of matching movies
       """
-      return []
+      movies = []
+
+      movie_title = title
+      movie_year = None
+
+      # Extract year from title
+      movie_title, movie_year = movielens.extract_year_from_title(title)
+
+      # Standardize leading article position (move to end)
+      movie_title = movielens.move_leading_article_to_end(movie_title)
+
+      # Search through movie title database for matching titles
+      for i in range(len(self.titles)):
+        entry_title, entry_year, _ = self.titles[i]
+
+        # Filter by movie year
+        if movie_year is not None and movie_year != entry_year:
+          continue
+
+        # Filter by movie title
+        if movie_title.lower() == entry_title.lower():
+          # Match found
+          movies.append(i)
+
+      """
+      print('movie_title:', movie_title)
+      print('movie_year:', movie_year)
+      print('')
+      """
+
+      return movies
 
 
     def extract_sentiment(self, text):

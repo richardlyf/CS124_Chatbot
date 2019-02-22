@@ -104,6 +104,22 @@ def test_extract_titles():
 def test_find_movies_by_title():
     print("Testing find_movies_by_title() functionality...")
     chatbot = Chatbot(False)
+
+    """
+    chatbot.find_movies_by_title("ABC (2019)")
+    chatbot.find_movies_by_title("ABC(2019)")
+    chatbot.find_movies_by_title("ABC (123)")
+    chatbot.find_movies_by_title("ABC (20123)")
+    chatbot.find_movies_by_title("ABC (201A)")
+    chatbot.find_movies_by_title("ABC1234")
+    chatbot.find_movies_by_title("ABC 2012")
+    print (chatbot.titles[217])
+    chatbot.find_movies_by_title("An ABC (2019)")
+    chatbot.find_movies_by_title("ABC THE (2019)")
+    chatbot.find_movies_by_title("The Ant")
+    return
+    """
+
     if assertListEquals(
         chatbot.find_movies_by_title("The American President"),
         [10],
