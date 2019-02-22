@@ -9,6 +9,7 @@ import re
 
 import PorterStemmer as ps
 from deps import sentimentPrediction as sentiPred
+from deps import lib
 
 
 class Chatbot:
@@ -24,6 +25,7 @@ class Chatbot:
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
+      self.titles = lib.standardize_titles(self.titles)
 
       self.sentiment = movielens.sentiment()
 
@@ -157,10 +159,10 @@ class Chatbot:
       movie_year = None
 
       # Extract year from title
-      movie_title, movie_year = movielens.extract_year_from_title(title)
+      movie_title, movie_year = lib.extract_year_from_title(title)
 
       # Standardize leading article position (move to end)
-      movie_title = movielens.move_leading_article_to_end(movie_title)
+      movie_title = lib.move_leading_article_to_end(movie_title)
 
       # Search through movie title database for matching titles
       for i in range(len(self.titles)):
