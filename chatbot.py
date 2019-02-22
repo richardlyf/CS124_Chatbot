@@ -21,6 +21,7 @@ class Chatbot:
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
+
       self.sentiment = movielens.sentiment()
 
       #############################################################################
@@ -146,6 +147,37 @@ class Chatbot:
       :param title: a string containing a movie title
       :returns: a list of indices of matching movies
       """
+      movies = []
+
+      # matches "<title> (<year>)"
+      # for example, matches "Harry Potter (2010)"
+      year_pat = '(?P<title>.*) \((?P<year>[0-9]{4})\)'
+
+      movie_title = title
+      movie_year = None
+      movie_article = None
+
+      # check for movie year
+      e_matches = re.findall(year_pat, title)
+      if len(e_matches) != 0:
+        # movie year detected
+        assert (len(e_matches) == 1)
+
+        movie_title = e_matches[0][0]
+        movie_year = e_matches[0][1]
+
+      # Standardize leading article position (move to end)
+      movie_title = movielens.move_leading_article_to_end(movie_title)
+
+
+      # TODO: search through movie title database
+
+      """
+      print('movie_title:', movie_title)
+      print('movie_year:', movie_year)
+      print('movie_article', movie_article, '\n\n')
+      """
+
       return []
 
 
