@@ -8,6 +8,7 @@ import numpy as np
 import re
 
 import PorterStemmer as ps
+from deps import sentimentPrediction as sentiPred
 
 
 class Chatbot:
@@ -200,6 +201,39 @@ class Chatbot:
       :param text: a user-supplied line of text
       :returns: a numerical value for the sentiment of the text
       """
+      # Naive implementation of just counting positive words vs negative words
+      words_stemmed = self.stem_text(text)
+      words = words_stemmed.split()
+      posCount = 0
+      for word in words:
+          if word in self.sentiment:
+              if self.sentiment[word] == 'pos':
+                  posCount += 1
+              else:
+                  posCount -= 1
+
+      if posCount != 0:
+          posCount = posCount / abs(posCount)
+      print(posCount)
+      return posCount
+
+      # Should transfer over the Naive Bayes probabilities and try those
+
+      '''
+      # This is the logistic regression frame work. Need bigram features for this to work
+
+      words_stemmed = self.stem_text(text)
+      words = text.split()
+
+      classifier = sentiPred.SentimentPredictor(self.sentiment)
+
+      return classifier.classify(words_stemmed)
+      '''
+
+    def stem_text(self, text):
+      """
+      Takes in a text string and returns the text string stemmed using porterStemmer
+      """
       stemmer = ps.PorterStemmer()
       output = ''
       word = ''
@@ -211,11 +245,8 @@ class Chatbot:
                   output += stemmer.stem(word, 0,len(word)-1)
                   word = ''
               output += c.lower()
-
-      print(output)
-      words = text.split()
-      print(words)
-      return 0
+      output += stemmer.stem(word, 0,len(word)-1)
+      return output
 
     def extract_sentiment_for_movies(self, text):
       """Creative Feature: Extracts the sentiments from a line of text
@@ -241,7 +272,7 @@ class Chatbot:
       from the provided title, and with edit distance at most max_distance.
 
       - If no movies have titles within max_distance of the provided title, return an empty list.
-      - Otherwise, if there's a movie closer in edit distance to the given title 
+      - Otherwise, if there's a movie closer in edit distance to the given title
         than all other movies, return a 1-element list containing its index.
       - If there is a tie for closest movie, return a list with the indices of all movies
         tying for minimum edit distance to the given movie.
@@ -257,10 +288,10 @@ class Chatbot:
       pass
 
     def disambiguate(self, clarification, candidates):
-      """Creative Feature: Given a list of movies that the user could be talking about 
-      (represented as indices), and a string given by the user as clarification 
-      (eg. in response to your bot saying "Which movie did you mean: Titanic (1953) 
-      or Titanic (1997)?"), use the clarification to narrow down the list and return 
+      """Creative Feature: Given a list of movies that the user could be talking about
+      (represented as indices), and a string given by the user as clarification
+      (eg. in response to your bot saying "Which movie did you mean: Titanic (1953)
+      or Titanic (1997)?"), use the clarification to narrow down the list and return
       a smaller list of candidates (hopefully just 1!)
 
       - If the clarification uniquely identifies one of the movies, this should return a 1-element
@@ -270,7 +301,7 @@ class Chatbot:
 
       Example:
         chatbot.disambiguate("1997", [1359, 2716]) should return [1359]
-      
+
       :param clarification: user input intended to disambiguate between the given movies
       :param candidates: a list of movie indices
       :returns: a list of indices corresponding to the movies identified by the clarification
@@ -318,7 +349,7 @@ class Chatbot:
 
       :returns: the cosine similarity between the two vectors
       """
-      
+
       similarity = 0
       norm1 = np.sqrt(np.sum(u**2))
       norm2 = np.sqrt(np.sum(v**2))
