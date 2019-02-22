@@ -158,8 +158,18 @@ class Chatbot:
       # Standardize leading article position (move to end)
       movie_title = movielens.move_leading_article_to_end(movie_title)
 
+      # Search through movie title database for matching titles
+      for i in range(len(self.titles)):
+        entry_title, entry_year, _ = self.titles[i]
 
-      # TODO: search through movie title database
+        # Filter by movie year
+        if movie_year is not None and movie_year != entry_year:
+          continue
+
+        # Filter by movie title
+        if movie_title.lower() == entry_title.lower():
+          # Match found
+          movies.append(i)
 
       """
       print('movie_title:', movie_title)
@@ -167,7 +177,7 @@ class Chatbot:
       print('')
       """
 
-      return []
+      return movies
 
 
     def extract_sentiment(self, text):

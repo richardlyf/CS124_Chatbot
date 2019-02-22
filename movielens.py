@@ -43,7 +43,7 @@ def ratings(src_filename=RATINGS_FILE, delimiter='%', header=False, quoting=csv.
 # Extracts an year from the input title, returns ([title without year], year) 
 # if an year was successfully extracted, and (title, None) otherwise
 def extract_year_from_title(title):
-    year_pat = '(?P<title>.*) \((?P<year>[0-9]{4}|[0-9]{4}-|[0-9]{4}-[0-9]{4})\)'
+    year_pat = '^(?P<title>.*) \((?P<year>[0-9]{4}|[0-9]{4}-|[0-9]{4}-[0-9]{4})\)$'
 
     e_matches = re.findall(year_pat, title)
     if (len(e_matches) != 1):
@@ -65,7 +65,7 @@ def extract_year_from_title(title):
 def move_leading_article_to_end(title):
     # matches "<article> <title>"
     # for example, matches "The Notebook"
-    article_pat = '(?P<leading_article>A|a|An|an|AN|The|the|THE) (?P<title>.*)'
+    article_pat = '^(?P<leading_article>A|a|An|an|AN|The|the|THE) (?P<title>.*)$'
 
     # check for leading article
     e_matches = re.findall(article_pat, title)
@@ -93,8 +93,8 @@ def titles(src_filename=MOVIES_FILE, delimiter='%', header=False, quoting=csv.QU
             if title[0] == '"' and title[-1] == '"':
                 title = title[1:-1]
 
-            # Standardize titles: leading article at beginning, year is extracted
-            # For example, "Lottery, The (2016)" -> ["The Lottery", 2016]
+            # Standardize titles: leading article at end, year is extracted
+            # For example, "Lottery, The (2016)" -> ["Lottery, The", 2016]
 
             # Extract year from title
             title, year = extract_year_from_title(title)
