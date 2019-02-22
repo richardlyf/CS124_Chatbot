@@ -40,6 +40,23 @@ def ratings(src_filename=RATINGS_FILE, delimiter='%', header=False, quoting=csv.
             mat[int(line[1])][int(line[0])] = float(line[2])
     return title_list, mat
 
+# Extracts an year from the input title, returns ([title without year], year) 
+# if an year was successfully extracted, and (title, None) otherwise
+def extract_year_from_title(title):
+    year_pat = '(?P<title>.*) \((?P<year>[0-9]{4}|[0-9]{4}-|[0-9]{4}-[0-9]{4})\)'
+
+    e_matches = re.findall(year_pat, title)
+    if (len(e_matches) != 1):
+        # no year found
+        movie_title = title
+        movie_year = None
+    else:
+        # successfully parsed year
+        assert (len(e_matches) == 1)
+        movie_title = e_matches[0][0]
+        movie_year = e_matches[0][1]
+
+    return movie_title, movie_year
 
 # Standardizes titles by moving the leading article to the end of the title
 # For example, "The Blue Dog" -> "Blue Dog, The"
@@ -79,16 +96,8 @@ def titles(src_filename=MOVIES_FILE, delimiter='%', header=False, quoting=csv.QU
             # Standardize titles: leading article at beginning, year is extracted
             # For example, "Lottery, The (2016)" -> ["The Lottery", 2016]
 
-            # Extract year
-            year_pat = '(?P<title>.*) \((?P<year>[0-9]{4}|[0-9]{4}-|[0-9]{4}-[0-9]{4})\)'
-
-            e_matches = re.findall(year_pat, title)
-            if (len(e_matches) != 1):
-                year = None
-            else:
-                assert (len(e_matches) == 1)
-                title = e_matches[0][0]
-                year = e_matches[0][1]
+            # Extract year from title
+            title, year = extract_year_from_title(title)
 
             # Standardize leading article position (move to end)
             title = move_leading_article_to_end(title)
