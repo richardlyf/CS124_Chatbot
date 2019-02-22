@@ -326,16 +326,10 @@ class Chatbot:
 
       :returns: a binarized version of the movie-rating matrix
       """
-      #############################################################################
-      # TODO: Binarize the supplied ratings matrix.                               #
-      #############################################################################
+      binarized_ratings = ratings.copy()
+      binarized_ratings[np.where((binarized_ratings <= threshold) & (binarized_ratings != 0))] = -1
+      binarized_ratings[np.where(binarized_ratings > threshold)] = 1
 
-      # The starter code returns a new matrix shaped like ratings but full of zeros.
-      binarized_ratings = np.zeros_like(ratings)
-
-      #############################################################################
-      #                             END OF YOUR CODE                              #
-      #############################################################################
       return binarized_ratings
 
 
