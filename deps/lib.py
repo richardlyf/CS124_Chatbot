@@ -101,25 +101,50 @@ def standardize_titles(titles):
 Calculates the minimum edit distance between w1 and w2.
 Insertions, deletions, and replacements all have cost of 1.
 """
+cache = {}
 def min_edit_distance(w1, w2):
-    return min_edit_distance_helper(w1, w2, len(w1)-1, len(w2)-1, 0)
+    cache = {}
+    return min_edit_distance_helper(w1, w2, len(w1)-1, len(w2)-1, cache)
 
-def min_edit_distance_helper(w1, w2, i1, i2, edit_dist):
+def min_edit_distance_helper(w1, w2, i1, i2, cache):
     # base case
     if i1 == -1:
-        return edit_dist + i2 + 1
+        return i2 + 1
     if i2 == -1:
-        return edit_dist + i1 + 1
+        return i1 + 1
 
     # recursive cases
     if w1[i1] == w2[i2]:
-        return min_edit_distance_helper(w1, w2, i1-1, i2-1, edit_dist)
+        k = (i1-1, i2-1)
+        if k not in cache:
+            ed = min_edit_distance_helper(w1, w2, i1-1, i2-1, cache)
+        else:
+            ed = cache[k]
     else:
-        return min(
-            min_edit_distance_helper(w1, w2, i1-1, i2, edit_dist+1),
-            min_edit_distance_helper(w1, w2, i1, i2-1, edit_dist+1),
-            min_edit_distance_helper(w1, w2, i1-1, i2-1, edit_dist+1)
-        )
+        k1 = (i1-1, i2)
+        if k1 not in cache:
+            ed1 = min_edit_distance_helper(w1, w2, i1-1, i2, cache) + 1
+        else:
+            ed1 = cache[k1] + 1
+
+        k2 = (i1, i2-1)
+        if k2 not in cache:
+            ed2 = min_edit_distance_helper(w1, w2, i1, i2-1, cache) + 1
+        else:
+            ed2 = cache[k2] + 1
+
+        k3 = (i1-1, i2-1)
+        if k3 not in cache:
+            ed3 = min_edit_distance_helper(w1, w2, i1-1, i2-1, cache) + 1
+        else:
+            ed3 = cache[k3] + 1
+
+        ed = min(ed1, ed2, ed3)
+
+    k = (i1, i2)
+    cache[k] = ed
+
+    return ed
 
 
 """

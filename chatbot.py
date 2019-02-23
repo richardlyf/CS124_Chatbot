@@ -175,15 +175,14 @@ class Chatbot:
           continue
 
         # Filter by movie title
-        if movie_title.lower() == entry_title.lower():
-          # Match found
-          movies.append(i)
-
-      """
-      print('movie_title:', movie_title)
-      print('movie_year:', movie_year)
-      print('')
-      """
+        if max_distance <= 0:
+          # No spelling correction
+          if movie_title.lower() == entry_title.lower():
+            movies.append(i)
+        else:
+          # Apply spelling correction
+          if lib.min_edit_distance(movie_title.lower(), entry_title.lower()) <= max_distance:
+            movies.append(i)
 
       return movies
 
@@ -284,8 +283,8 @@ class Chatbot:
       :param max_distance: the maximum edit distance to search for
       :returns: a list of movie indices with titles closest to the given title and within edit distance max_distance
       """
+      return self.find_movies_by_title(title, max_distance)
 
-      pass
 
     def disambiguate(self, clarification, candidates):
       """Creative Feature: Given a list of movies that the user could be talking about
