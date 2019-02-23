@@ -49,16 +49,40 @@ def move_leading_article_to_end(title):
     else:
         return title
 
+
+"""
+Standardizes titles by moving the leading article to the front of the title
+For example, "Blue Dog, The" -> "The Blue Dog" 
+NOTE: does not discriminate on year (i.e. extract year before using this
+function); "Apple, An (2010)" -> "Apple, An (2010)"
+"""
+def move_leading_article_to_front(title):
+    article_pat = '^(?P<title>.*), (?P<leading_article>A|a|An|an|AN|The|the|THE)$'
+
+    # check for leading article
+    e_matches = re.findall(article_pat, title)
+    if len(e_matches) != 0:
+        # leading article detected at end of title
+        assert (len(e_matches) == 1)
+
+        movie_title = e_matches[0][0]
+        movie_article = e_matches[0][1]
+
+        return '{} {}'.format(movie_article, movie_title)
+    else:
+        return title
+
+
 """
 Takes a list of [title, genres] lists and standardizes entries by extracting the
-year and moving the leading article to the end. For example, a single element
-conversion: ["The House (2018)", <genres>] -> ["House, The", 2018, <genres>]
+year and moving the leading article to the front. For example, a single element
+conversion: ["House, The (2018)", <genres>] -> ["The House", 2018, <genres>]
 """
 def standardize_titles(titles):
     standardized_titles = []
 
-    # Standardize titles: leading article at end, year is extracted
-    # For example, "Lottery, The (2016)" -> ["Lottery, The", 2016]
+    # Standardize titles: leading article at front, year is extracted
+    # For example, "Lottery, The (2016)" -> ["The Lottery", 2016]
     for entry in titles:
         title = entry[0]
         genres = entry[1]
@@ -66,12 +90,37 @@ def standardize_titles(titles):
         # Extract year from title
         title, year = extract_year_from_title(title)
 
-        # Standardize leading article position (move to end)
-        title = move_leading_article_to_end(title)
+        # Standardize leading article position (move to front)
+        title = move_leading_article_to_front(title)
 
         standardized_titles.append([title, year, genres])
 
     return standardized_titles
+
+""" 
+Calculates the minimum edit distance between w1 and w2.
+Insertions, deletions, and replacements all have cost of 1.
+"""
+def min_edit_distance(w1, w2):
+    return min_edit_distance_helper(w1, w2, len(w1)-1, len(w2)-1, 0)
+
+def min_edit_distance_helper(w1, w2, i1, i2, edit_dist):
+    # base case
+    if i1 == -1:
+        return edit_dist + i2 + 1
+    if i2 == -1:
+        return edit_dist + i1 + 1
+
+    # recursive cases
+    if w1[i1] == w2[i2]:
+        return min_edit_distance_helper(w1, w2, i1-1, i2-1, edit_dist)
+    else:
+        return min(
+            min_edit_distance_helper(w1, w2, i1-1, i2, edit_dist+1),
+            min_edit_distance_helper(w1, w2, i1, i2-1, edit_dist+1),
+            min_edit_distance_helper(w1, w2, i1-1, i2-1, edit_dist+1)
+        )
+
 
 """
 Takes in a text string and returns the text string stemmed using PorterStemmer

@@ -137,7 +137,9 @@ class Chatbot:
 
       return titles
 
-    def find_movies_by_title(self, title):
+    # If max_distance is provided, then enable max-distance spell correcting.
+    # Note that the spell correcting is applied after year extraction.
+    def find_movies_by_title(self, title, max_distance=-1):
       """ Given a movie title, return a list of indices of matching movies.
 
       - If no movies are found that match the given title, return an empty list.
@@ -161,8 +163,8 @@ class Chatbot:
       # Extract year from title
       movie_title, movie_year = lib.extract_year_from_title(title)
 
-      # Standardize leading article position (move to end)
-      movie_title = lib.move_leading_article_to_end(movie_title)
+      # Standardize leading article position (move to front)
+      movie_title = lib.move_leading_article_to_front(movie_title)
 
       # Search through movie title database for matching titles
       for i in range(len(self.titles)):
