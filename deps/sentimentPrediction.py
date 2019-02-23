@@ -17,9 +17,6 @@ class SentimentPredictor:
             self.bias = zipped[1]
             self.weight = zipped[2]
             self.sentiment = sentiment
-            print(self.weight[-2:])
-            #print(self.bias)
-            #print(self.weight[:10])
 
 	"""
 	Transforms the input text into a dense vector using self.feature_vec

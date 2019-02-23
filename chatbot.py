@@ -7,7 +7,6 @@ import movielens
 import numpy as np
 import re
 
-import PorterStemmer as ps
 from deps import sentimentPrediction as sentiPred
 from deps import lib
 
@@ -28,6 +27,7 @@ class Chatbot:
       self.titles = lib.standardize_titles(self.titles)
 
       self.sentiment = movielens.sentiment()
+      self.sentiment = lib.stem_map(self.sentiment)
 
       #############################################################################
       # TODO: Binarize the movie ratings matrix.                                  #
@@ -204,10 +204,10 @@ class Chatbot:
       :returns: a numerical value for the sentiment of the text
       """
       # Naive implementation of just counting positive words vs negative words
-      negations = ['don\'t', 'not', 'never', 'none', 'nothing', 'hardly', 'didn\'t']
+      negations = ['don\'t', 'not', 'never', 'none', 'nothing', 'hardly', 'didn\'t', 'but']
       negation_scale = 1
 
-      words_stemmed = self.stem_text(text)
+      words_stemmed = lib.stem_text(text)
       words = words_stemmed.split()
       posCount = 0
       print(words)
@@ -238,31 +238,13 @@ class Chatbot:
       '''
       # This is the logistic regression frame work. Need bigram features for this to work
 
-      words_stemmed = self.stem_text(text)
+      words_stemmed = lib.stem_text(text)
       words = text.split()
 
       classifier = sentiPred.SentimentPredictor(self.sentiment)
 
       return classifier.classify(words_stemmed)
       '''
-
-    def stem_text(self, text):
-      """
-      Takes in a text string and returns the text string stemmed using porterStemmer
-      """
-      stemmer = ps.PorterStemmer()
-      output = ''
-      word = ''
-      for c in text:
-          if c.isalpha():
-              word += c.lower()
-          else:
-              if word:
-                  output += stemmer.stem(word, 0,len(word)-1)
-                  word = ''
-              output += c.lower()
-      output += stemmer.stem(word, 0,len(word)-1)
-      return output
 
     def extract_sentiment_for_movies(self, text):
       """Creative Feature: Extracts the sentiments from a line of text

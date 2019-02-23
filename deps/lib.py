@@ -1,7 +1,14 @@
-import re
+"""
+Utility file with functions that handle movie extraction and stemming
+"""
 
-# Extracts an year from the input title, returns ([title without year], year) 
-# if an year was successfully extracted, and (title, None) otherwise
+import re
+import PorterStemmer as ps
+
+"""
+Extracts the year from the input title, returns ([title without year], year)
+if an year was successfully extracted, and (title, None) otherwise
+"""
 def extract_year_from_title(title):
     year_pat = '^(?P<title>.*) \((?P<year>[0-9]{4}|[0-9]{4}-|[0-9]{4}-[0-9]{4})\)$'
 
@@ -18,10 +25,12 @@ def extract_year_from_title(title):
 
     return movie_title, movie_year
 
-# Standardizes titles by moving the leading article to the end of the title
-# For example, "The Blue Dog" -> "Blue Dog, The"
-# NOTE: does not discriminate on year (i.e. extract year before using this
-# function); "An Apple (2010)" -> "Apple (2010), An"
+"""
+Standardizes titles by moving the leading article to the end of the title
+For example, "The Blue Dog" -> "Blue Dog, The"
+NOTE: does not discriminate on year (i.e. extract year before using this
+function); "An Apple (2010)" -> "Apple (2010), An"
+"""
 def move_leading_article_to_end(title):
     # matches "<article> <title>"
     # for example, matches "The Notebook"
@@ -39,10 +48,12 @@ def move_leading_article_to_end(title):
         return '{}, {}'.format(movie_title, movie_article)
     else:
         return title
-        
-# Takes a list of [title, genres] lists and standardizes entries by extracting the
-# year and moving the leading article to the end. For example, a single element
-# conversion: ["The House (2018)", <genres>] -> ["House, The", 2018, <genres>]
+
+"""
+Takes a list of [title, genres] lists and standardizes entries by extracting the
+year and moving the leading article to the end. For example, a single element
+conversion: ["The House (2018)", <genres>] -> ["House, The", 2018, <genres>]
+"""
 def standardize_titles(titles):
     standardized_titles = []
 
@@ -62,3 +73,33 @@ def standardize_titles(titles):
 
     return standardized_titles
 
+"""
+Takes in a text string and returns the text string stemmed using PorterStemmer
+"""
+def stem_text(text):
+  stemmer = ps.PorterStemmer()
+  output = ''
+  word = ''
+  for c in text:
+      if c.isalpha():
+          word += c.lower()
+      else:
+          if word:
+              output += stemmer.stem(word, 0,len(word)-1)
+              word = ''
+          output += c.lower()
+  output += stemmer.stem(word, 0,len(word)-1)
+  return output
+
+"""
+Takes a map from words to 'pos' 'neg' labels and updates the keys into its stemmed
+versions. (self.sentiment in chatbot). Returns the stemmed version of that map.
+Stemming is done using PorterStemmer
+{'enjoy' : 'pos'} -> {'enjoi' : 'pos'}
+"""
+def stem_map(mapping):
+    result = {}
+    for key, val in mapping.items():
+        result[stem_text(key)] = val
+
+    return result
