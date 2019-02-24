@@ -6,17 +6,36 @@ import movielens
 
 import numpy as np
 import re
+import random
 
 from deps import sentimentPrediction as sentiPred
 from deps import lib
 
+# Edit distance allowed for a movie title match
+EDIT_DIST = 3
+
+# Corpuses for different responses
+# Opening greeting
+greeting_corp = [
+"Please tell me about movies you've liked or didn't like so I can make you some recommendations.",
+"Please tell me about movies you've watched"
+]
+
+# Movie title successfully extracted but is invalid
+invalid_movie_corp = [
+"Humm... Sorry I don't think I know about this movie that you mentioned. Can you try another one?"
+]
+
+multi_movie_corp = [
+"Ahh, I have found more than one movie called {}: {}, {} \nCan you repeat your preference with a more specific title?",
+]
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
 
     def __init__(self, creative=False):
       # The chatbot's default name is `moviebot`. Give your chatbot a new name.
-      self.name = 'moviebot'
+      self.name = 'Marvin the Marvelous Moviebot'
 
       self.creative = creative
 
@@ -29,15 +48,10 @@ class Chatbot:
       self.sentiment = movielens.sentiment()
       self.sentiment = lib.stem_map(self.sentiment)
 
-      #############################################################################
-      # TODO: Binarize the movie ratings matrix.                                  #
-      #############################################################################
+      ratings = self.binarize(ratings)
 
       # Binarize the movie ratings before storing the binarized matrix.
       self.ratings = ratings
-      #############################################################################
-      #                             END OF YOUR CODE                              #
-      #############################################################################
 
     #############################################################################
     # 1. WARM UP REPL                                                           #
@@ -45,28 +59,15 @@ class Chatbot:
 
     def greeting(self):
       """Return a message that the chatbot uses to greet the user."""
-      #############################################################################
-      # TODO: Write a short greeting message                                      #
-      #############################################################################
+      greeting_message = lib.getResponse(greeting_corp)
 
-      greeting_message = "How can I help you?"
-
-      #############################################################################
-      #                             END OF YOUR CODE                              #
-      #############################################################################
       return greeting_message
 
     def goodbye(self):
       """Return a message that the chatbot uses to bid farewell to the user."""
-      #############################################################################
-      # TODO: Write a short farewell message                                      #
-      #############################################################################
 
       goodbye_message = "Have a nice day!"
 
-      #############################################################################
-      #                             END OF YOUR CODE                              #
-      #############################################################################
       return goodbye_message
 
 
@@ -78,9 +79,6 @@ class Chatbot:
       """Process a line of input from the REPL and generate a response.
 
       This is the method that is called by the REPL loop directly with user input.
-
-      You should delegate most of the work of processing the user's input to
-      the helper functions you write later in this class.
 
       Takes the input string from the REPL and call delegated functions that
         1) extract the relevant information, and
@@ -101,12 +99,24 @@ class Chatbot:
       if self.creative:
         response = "I processed {} in creative mode!!".format(line)
       else:
-        response = "I processed {} in starter mode!!".format(line)
+        # Get exactly one title
+        title = self.extract_titles(line)
+        if len(title) != 1:
+            return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
+
+        # Find matching movie
+        movie_index = self.find_movies_by_title(title[0])
+        movies = lib.extract_movies_using_indices(self.titles, movie_index)
+
+        if len(movies) == 0:
+            return lib.getResponse(invalid_movie_corp)
+        elif len(movies) > 1:
+            return lib.getResponse(multi_movie_corp).format(title[0], movies[0], ', '.join(movies[1:5]))
+
+        # Update the line to be without movie titles
+        line = lib.remove_title_from_line(title, line)
         self.extract_sentiment(line)
 
-      #############################################################################
-      #                             END OF YOUR CODE                              #
-      #############################################################################
       return response
 
     def extract_titles(self, text):
@@ -130,15 +140,13 @@ class Chatbot:
       """
       titles = []
 
-      quote_pat = '\"(?P<title>[^\""]+)\"'
+      quote_pat = '\"(?P<title>[^\"]+)\"'
       e_matches = re.findall(quote_pat, text)
       for title in e_matches:
         titles.append(title)
 
       return titles
 
-    # If max_distance is provided, then enable max-distance spell correcting.
-    # Note that the spell correcting is applied after year extraction.
     def find_movies_by_title(self, title, max_distance=-1):
       """ Given a movie title, return a list of indices of matching movies.
 
@@ -147,6 +155,9 @@ class Chatbot:
       containing all of the indices of these matching movies.
       - If exactly one movie is found that matches the given title, return a list
       that contains the index of that matching movie.
+
+      If max_distance is provided, then enable max-distance spell correcting.
+      Note that the spell correcting is applied after year extraction.
 
       Example:
         ids = chatbot.find_movies_by_title('Titanic')
@@ -168,7 +179,7 @@ class Chatbot:
 
       # Search through movie title database for matching titles
       for i in range(len(self.titles)):
-        entry_title, entry_year, _ = self.titles[i]
+        entry_title, entry_year, genre = self.titles[i]
 
         # Filter by movie year
         if movie_year is not None and movie_year != entry_year:

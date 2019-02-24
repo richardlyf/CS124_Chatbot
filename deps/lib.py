@@ -3,7 +3,10 @@ Utility file with functions that handle movie extraction and stemming
 """
 
 import re
+import random
 import PorterStemmer as ps
+
+## Movie title extraction helpers ##
 
 """
 Extracts the year from the input title, returns ([title without year], year)
@@ -52,7 +55,7 @@ def move_leading_article_to_end(title):
 
 """
 Standardizes titles by moving the leading article to the front of the title
-For example, "Blue Dog, The" -> "The Blue Dog" 
+For example, "Blue Dog, The" -> "The Blue Dog"
 NOTE: does not discriminate on year (i.e. extract year before using this
 function); "Apple, An (2010)" -> "Apple, An (2010)"
 """
@@ -72,6 +75,18 @@ def move_leading_article_to_front(title):
     else:
         return title
 
+"""
+Takes in a list of movie title objects(self.titles) and movie indicies
+Returns a list of string type movie names with year included
+"""
+def extract_movies_using_indices(titles_obj, indices):
+    movies = []
+    for index in indices:
+        title, year, genre = titles_obj[index]
+        if year is not None:
+            title += "(" + str(year) + ")"
+            movies.append(title)
+    return movies
 
 """
 Takes a list of [title, genres] lists and standardizes entries by extracting the
@@ -97,7 +112,7 @@ def standardize_titles(titles):
 
     return standardized_titles
 
-""" 
+"""
 Calculates the minimum edit distance between w1 and w2.
 Insertions, deletions, and replacements all have cost of 1.
 """
@@ -146,6 +161,7 @@ def min_edit_distance_helper(w1, w2, i1, i2, cache):
 
     return ed
 
+## Stemming helpers##
 
 """
 Takes in a text string and returns the text string stemmed using PorterStemmer
@@ -177,3 +193,20 @@ def stem_map(mapping):
         result[stem_text(key)] = val
 
     return result
+
+## Response helpers ##
+"""
+Takes in a corpus, which is a list of potential responces.
+Returns one of the responses in the corpus with uniform probability
+"""
+def getResponse(corpus):
+    index = random.randint(0, len(corpus) - 1)
+    return corpus[index]
+
+"""
+Takes in a movie title and a line and returns the line with that movie title removed.
+"""
+def remove_title_from_line(title, line):
+    title += ' '
+    return line.replace(title, '')
+
