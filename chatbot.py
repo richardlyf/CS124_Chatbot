@@ -420,7 +420,11 @@ class Chatbot:
 
       :returns: the cosine similarity between the two vectors
       """
-      return np.dot (u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
+      norm1 = np.linalg.norm(u)
+      norm2 = np.linalg.norm(v)
+      if norm1 * norm2 == 0:
+          return 0
+      return np.dot (u, v) / (norm1 * norm2)
 
 
     def recommend(self, user_ratings, ratings_matrix, k=10, creative=False):
