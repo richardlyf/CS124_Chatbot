@@ -83,7 +83,14 @@ def test_binarize():
         np.array([[-1., -1., 1., 0.]]),
         "Incorrect output for binarize(np.array([[1, 2.5, 5, 0]]))."
     ):
-        print("binarize() sanity check passed!")
+        print("1. binarize() sanity check passed!")
+
+    if assertNumpyArrayEquals(
+        chatbot.binarize(np.array([[0, 1], [2.5, 5]])),
+        np.array([[0, -1], [-1, 1]]),
+        "Incorrect output for binarize(np.array([[0, 1], [2.5, 5]]))."
+    ):
+        print("2. binarize() sanity check passed!")
     print()
 
 def test_extract_titles():
@@ -225,6 +232,28 @@ def test_recommend():
         print("recommend() sanity check passed!")
     print()
 
+def test_process():
+    print("Testing process() functionality...")
+    chatbot = Chatbot(False)
+
+    user_input = [
+    '"Ti"',
+    '"Titanic"',
+    '"Titanic (1997)"',
+    '"Titanic (1997)" I liked',
+    '"Titanic (1997)" I disliked',
+    '"Avatar" I disliked',
+    '"Blade runner" I enjoyed',
+    '"the notebook" was boring at first but then I think I liked it',
+    '"scream" was bad',
+    'I loved "10 things I hate about you"',
+    'can you recommend me a movie?'
+    ]
+
+    for line in user_input:
+        print("User: " + line)
+        print("Marvin: " + chatbot.process(line))
+
 def main():
     parser = argparse.ArgumentParser(description='Sanity checks the chatbot. If no arguments are passed, all checks are run; you can use the arguments below to test specific parts of the functionality.')
 
@@ -233,12 +262,13 @@ def main():
     args = parser.parse_args()
     testing_creative = args.creative
 
-    test_extract_titles()
-    test_find_movies_by_title()
-    test_extract_sentiment()
-    test_recommend()
-    test_binarize()
-    test_similarity() # TODO: broken when run with starter code
+    #test_extract_titles()
+    #test_find_movies_by_title()
+    #test_extract_sentiment()
+    #test_recommend()
+    #test_binarize()
+    #test_similarity()
+    test_process()
 
     if testing_creative:
         test_find_movies_closest_to_title()

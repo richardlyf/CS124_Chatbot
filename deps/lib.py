@@ -84,7 +84,7 @@ def extract_movies_using_indices(titles_obj, indices):
     for index in indices:
         title, year, genre = titles_obj[index]
         if year is not None:
-            title += "(" + str(year) + ")"
+            title += " (" + str(year) + ")"
             movies.append(title)
     return movies
 
@@ -203,10 +203,4 @@ def getResponse(corpus):
     index = random.randint(0, len(corpus) - 1)
     return corpus[index]
 
-"""
-Takes in a movie title and a line and returns the line with that movie title removed.
-"""
-def remove_title_from_line(title, line):
-    title += ' '
-    return line.replace(title, '')
 

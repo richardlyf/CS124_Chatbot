@@ -30,6 +30,21 @@ multi_movie_corp = [
 "Ahh, I have found more than one movie called {}: {}, {} \nCan you repeat your preference with a more specific title?",
 ]
 
+pos_movie_corp = [
+"You liked {}, got it!",
+"Ok, so you enjoyed {}",
+"{}, good choice!"
+]
+
+neutral_movie_corp = [
+"I'm not sure if you liked {} or not. Can you tell me more?"
+]
+
+neg_movie_corp = [
+"I see. You didn't like {}.",
+"{} is no good, noted."
+]
+
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
 
@@ -52,6 +67,13 @@ class Chatbot:
 
       # Binarize the movie ratings before storing the binarized matrix.
       self.ratings = ratings
+
+      # Vector that keeps track of user movie preference
+      self.user_ratings = np.zeros(len(self.titles))
+      # Flag that user can update by talking to the chatbot. Set to false when the user asks for a recommendation
+      self.add_review = True
+      # Becomes true once the user's made 5 recommendations.
+      self.can_recommend = False
 
     #############################################################################
     # 1. WARM UP REPL                                                           #
@@ -96,28 +118,68 @@ class Chatbot:
       # possibly calling other functions. Although modular code is not graded,    #
       # it is highly recommended.                                                 #
       #############################################################################
-      if self.creative:
-        response = "I processed {} in creative mode!!".format(line)
+      # Check if a user can have a recommendation
+      if np.count_nonzero(self.user_ratings) >= 5 and not self.can_recommend:
+          self.can_recommend = True
+          return "Great! Now I have enough information to make recommendations.\n You can comtinue to rate movies or ask for a recommendation."
+
+      # Check if a user wants a recommendation:
+      if self.can_recommend and "recommend" in line:
+          self.add_review = False
+      elif "recommend" in line:
+          return "You need to rate at least 5 movies before I can recommend anything. So what did you like or didn't like?"
+
+      # Add reviews
+      if self.add_review:
+          if self.creative:
+              pass
+              #response = self.add_multi_movies_rating(line)
+          else:
+              response = self.add_single_movie_rating(line)
+      # Recommend
       else:
-        # Get exactly one title
-        title = self.extract_titles(line)
-        if len(title) != 1:
-            return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
-
-        # Find matching movie
-        movie_index = self.find_movies_by_title(title[0])
-        movies = lib.extract_movies_using_indices(self.titles, movie_index)
-
-        if len(movies) == 0:
-            return lib.getResponse(invalid_movie_corp)
-        elif len(movies) > 1:
-            return lib.getResponse(multi_movie_corp).format(title[0], movies[0], ', '.join(movies[1:5]))
-
-        # Update the line to be without movie titles
-        line = lib.remove_title_from_line(title, line)
-        self.extract_sentiment(line)
+          response = "Here are your recommendations: \n"
+          rec_indices = self.recommend(self.user_ratings, self.ratings, self.creative)
+          recs = lib.extract_movies_using_indices(self.titles, rec_indices)
+          response += ', '.join(recs) + '\n Feel free to add more reviews so I can make better recommendations.'
 
       return response
+
+    def add_single_movie_rating(self, line):
+      """
+      Takes in a user input in the form of a movie review.
+      Returns a response in the form of a string. The response either reprompts the user or
+      confirms the review is received.
+      (starter mode) Extracts only one movie.
+      """
+      # Get exactly one title
+      titles = self.extract_titles(line)
+      if len(titles) != 1:
+          return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
+      title = titles[0]
+
+      # Find matching movie
+      movie_index = self.find_movies_by_title(title)
+      movies = lib.extract_movies_using_indices(self.titles, movie_index)
+
+      if len(movies) == 0:
+          return lib.getResponse(invalid_movie_corp)
+      elif len(movies) > 1:
+          return lib.getResponse(multi_movie_corp).format(title, movies[0], ', '.join(movies[1:5]))
+
+      # Update the line to be without movie titles
+      line = line.replace(title, '')
+      sentiment = self.extract_sentiment(line)
+
+      # Provide ackowledgement
+      if sentiment == 1:
+          self.user_ratings[movie_index[0]] = 1
+          return lib.getResponse(pos_movie_corp).format(movies[0])
+      elif sentiment == 0:
+          return lib.getResponse(neutral_movie_corp).format(movies[0])
+      else:
+          self.user_ratings[movie_index[0]] = -1
+          return lib.getResponse(neg_movie_corp).format(movies[0])
 
     def extract_titles(self, text):
       """Extract potential movie titles from a line of text.
@@ -216,33 +278,38 @@ class Chatbot:
       :returns: a numerical value for the sentiment of the text
       """
       # Naive implementation of just counting positive words vs negative words
-      negations = ['don\'t', 'not', 'never', 'none', 'nothing', 'hardly', 'didn\'t', 'but']
+      negations = ['don\'t', 'not', 'never', 'none', 'nothing', 'hardly', 'didn\'t']
       negation_scale = 1
+
+      resets = ['but', 'however']
 
       words_stemmed = lib.stem_text(text)
       words = words_stemmed.split()
       posCount = 0
-      print(words)
+      #print(words)
       for word in words:
           # All words after the negation will take on its inverted value
           if word in negations:
               negation_scale *= -1
+          # Whatever comes before reset words don't really matter
+          elif word in resets:
+              posCount = 0
 
-          # Reset the negation scale to 1 if at end punctuation
-          if not word[len(word) - 1].isalpha():
+          # Reset the negation scale to 1 if at end punctuation. Commas don't count.
+          if not word[len(word) - 1].isalpha() and word[len(word) - 1] != ",":
               negation_scale = 1
 
           if word in self.sentiment:
               if self.sentiment[word] == 'pos':
-                  print("Word: " + word + " score: " + str(negation_scale))
+                  #print("Word: " + word + " score: " + str(negation_scale))
                   posCount += negation_scale
               else:
-                  print("Word: " + word + " score: " + str(-negation_scale))
+                  #print("Word: " + word + " score: " + str(-negation_scale))
                   posCount -= negation_scale
 
       if posCount != 0:
           posCount = posCount / abs(posCount)
-      print(posCount)
+      #print(posCount)
       return posCount
 
       # Should transfer over the Naive Bayes probabilities and try those
