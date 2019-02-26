@@ -271,7 +271,7 @@ def main():
     #test_recommend()
     #test_binarize()
     #test_similarity()
-    test_process()
+    # test_process()
 
     if testing_creative:
         test_find_movies_closest_to_title()

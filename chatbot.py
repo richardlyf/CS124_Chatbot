@@ -327,8 +327,14 @@ class Chatbot:
       :returns: a list of tuples, where the first item in the tuple is a movie title,
         and the second is the sentiment in the text toward that movie
       """
+      # Sentence punctuation marks: .!?;
+      sentence_punctuations = {'.', '?', '!'}
+
       # Coordinating conjunctions: for, and, nor, but, or, yet, so
-      conjunctions = {'for', 'and', 'nor', 'but', 'or', 'yet', 'so'}
+      # conjunctions = {'for', 'and', 'nor', 'but', 'or', 'yet', 'so'}
+      conjunctions = {'and', 'nor', 'but', 'or'}
+      # or, nor, and -> same clause
+      # but -> diff clause
 
       # Enums for tracking token types
       TKN_TITLE = 0
@@ -383,7 +389,41 @@ class Chatbot:
           tagged_tokens.append(elem)
 
       print(tagged_tokens)
-      pass
+
+      prev_neg_sentiment = None
+      movie_sentiments = []
+      current_sentence = ''
+      current_movies = []
+
+      for elem in tagged_tokens:
+        tag, token = elem
+
+        # skip conjunctions
+        if tag != TKN_CONJ:
+          current_sentence += token + ' '
+
+        # append to current_movies
+        if tag == TKN_TITLE:
+          current_movies.append(token)
+
+        # check if end of sentence / phrase (but is the only conj that signals end of phrase)
+        if (tag == TKN_CONJ and token.lower() == 'but') or (tag == TKN_OTHER and token.lower() in sentence_punctuations):
+          if prev_neg_sentiment is not None:
+            sentiment = prev_neg_sentiment * -1
+          else:
+            sentiment = self.extract_sentiment(current_sentence)
+
+          # print (current_sentence, sentiment)
+          for movie in current_movies:
+            movie_sentiments.append((movie, sentiment))
+
+          current_sentence = ''
+          current_movies = []
+
+          if (tag == TKN_CONJ and token.lower() == 'but'):
+            prev_neg_sentiment = sentiment
+
+      return movie_sentiments
 
     def find_movies_closest_to_title(self, title, max_distance=3):
       """Creative Feature: Given a potentially misspelled movie title,
