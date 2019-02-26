@@ -332,9 +332,9 @@ class Chatbot:
 
       # Coordinating conjunctions: for, and, nor, but, or, yet, so
       # conjunctions = {'for', 'and', 'nor', 'but', 'or', 'yet', 'so'}
-      conjunctions = {'and', 'nor', 'but', 'or'}
       # or, nor, and -> same clause
       # but -> diff clause
+      conjunctions = {'and', 'nor', 'but', 'or'}
 
       # Enums for tracking token types
       TKN_TITLE = 0
@@ -387,8 +387,6 @@ class Chatbot:
         (_, token) = elem
         if token != '':
           tagged_tokens.append(elem)
-
-      print(tagged_tokens)
 
       prev_neg_sentiment = None
       movie_sentiments = []
