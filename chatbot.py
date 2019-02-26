@@ -8,7 +8,6 @@ import numpy as np
 import re
 import random
 
-from deps import sentimentPrediction as sentiPred
 from deps import lib
 
 # Edit distance allowed for a movie title match
@@ -311,19 +310,6 @@ class Chatbot:
           posCount = posCount / abs(posCount)
       #print(posCount)
       return posCount
-
-      # Should transfer over the Naive Bayes probabilities and try those
-
-      '''
-      # This is the logistic regression frame work. Need bigram features for this to work
-
-      words_stemmed = lib.stem_text(text)
-      words = text.split()
-
-      classifier = sentiPred.SentimentPredictor(self.sentiment)
-
-      return classifier.classify(words_stemmed)
-      '''
 
     def extract_sentiment_for_movies(self, text):
       """Creative Feature: Extracts the sentiments from a line of text
