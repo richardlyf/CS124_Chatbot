@@ -166,8 +166,6 @@ class Chatbot:
       elif len(movies) > 1:
           return lib.getResponse(multi_movie_corp).format(title, movies[0], ', '.join(movies[1:5]))
 
-      # Update the line to be without movie titles
-      line = line.replace(title, '')
       sentiment = self.extract_sentiment(line)
 
       # Provide ackowledgement
@@ -281,6 +279,11 @@ class Chatbot:
       negation_scale = 1
 
       resets = ['but', 'however']
+
+      # Remove movie names from the text
+      titles = self.extract_titles(text)
+      for title in titles:
+        text = text.replace(title, '')
 
       words_stemmed = lib.stem_text(text)
       words = words_stemmed.split()

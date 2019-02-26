@@ -150,9 +150,9 @@ def min_edit_distance_helper(w1, w2, i1, i2, cache):
 
         k3 = (i1-1, i2-1)
         if k3 not in cache:
-            ed3 = min_edit_distance_helper(w1, w2, i1-1, i2-1, cache) + 1
+            ed3 = min_edit_distance_helper(w1, w2, i1-1, i2-1, cache) + 2
         else:
-            ed3 = cache[k3] + 1
+            ed3 = cache[k3] + 2
 
         ed = min(ed1, ed2, ed3)
 
