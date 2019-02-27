@@ -112,6 +112,63 @@ def standardize_titles(titles):
 
     return standardized_titles
 
+
+"""
+Tokenize text to separate into segments (tokens) of conjunctions,
+movie titles, and other words.
+Note: assumes that all words within "" are movie titles
+Returns list of [(<tag>, <token>), (<tag>, <token>), ...]
+"""
+def tokenize_conj_movie_other (text):
+    # Coordinating conjunctions: for, and, nor, but, or, yet, so
+    # conjunctions = {'for', 'and', 'nor', 'but', 'or', 'yet', 'so'}
+    # or, nor, and -> same clause
+    # but -> diff clause
+    conjunctions = {'and', 'nor', 'but', 'or'}
+    
+    TKN_TITLE = 0
+    TKN_CONJ = 1
+    TKN_OTHER = 2
+    
+    processed_tokens = []
+
+    tokens = text.split('\"')
+    i = 0
+    while (i < len(tokens)):
+        assert (i % 2 == 0)
+
+        # token[i] is a non-movie segment of words
+        word_segment = tokens[i]
+
+        # tokenize by conjunctions, i.e. create tokens of 
+        # [<non-conj-words>, <conj>, <non-conj-words>, ...]
+        word_tokens = word_segment.split()
+        string_builder = []
+        conj_tokenized_words = []
+
+        for word in word_tokens:
+            if word.lower() not in conjunctions:
+                # Non-conjunction word, continue building word token
+                string_builder.append(word)
+            else:
+                # Word is a conjunction
+                conj_tokenized_words.append((TKN_OTHER, ' '.join(string_builder)))
+                conj_tokenized_words.append((TKN_CONJ, word))
+                string_builder = []
+
+        if len(string_builder) > 0:
+            conj_tokenized_words.append((TKN_OTHER, ' '.join(string_builder)))
+
+        processed_tokens = processed_tokens + conj_tokenized_words
+
+        if (i + 1) < len(tokens):
+            movie_title = tokens[i + 1]
+            processed_tokens.append((TKN_TITLE, movie_title))
+
+        i += 2
+
+    return processed_tokens
+
 """
 Calculates the minimum edit distance between w1 and w2.
 Insertions, deletions, and replacements all have cost of 1.

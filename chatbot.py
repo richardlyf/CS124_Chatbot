@@ -333,56 +333,20 @@ class Chatbot:
       # Sentence punctuation marks: .!?;
       sentence_punctuations = {'.', '?', '!'}
 
-      # Coordinating conjunctions: for, and, nor, but, or, yet, so
-      # conjunctions = {'for', 'and', 'nor', 'but', 'or', 'yet', 'so'}
-      # or, nor, and -> same clause
-      # but -> diff clause
-      conjunctions = {'and', 'nor', 'but', 'or'}
-
       # Enums for tracking token types
       TKN_TITLE = 0
       TKN_CONJ = 1
       TKN_OTHER = 2
 
-      # Tokenize text to separate into segments (tokens) of conjunctions,
-      # movie titles, and other words
-      # Note: assume that all words within "" are movie titles
+      split_by_punc = re.split(r'\? |! |\. ', text)
       processed_tokens = []
 
-      tokens = text.split('\"')
-      i = 0
-      while (i < len(tokens)):
-        assert (i % 2 == 0)
+      for sentence in split_by_punc:
+        tks = lib.tokenize_conj_movie_other (sentence)
+        tks.append((TKN_OTHER, '.'))
+        processed_tokens = processed_tokens + tks   
 
-        # token[i] is a non-movie segment of words
-        word_segment = tokens[i]
-
-        # tokenize by conjunctions, i.e. create tokens of 
-        # [<non-conj-words>, <conj>, <non-conj-words>, ...]
-        word_tokens = word_segment.split()
-        string_builder = []
-        conj_tokenized_words = []
-
-        for word in word_tokens:
-          if word.lower() not in conjunctions:
-            # Non-conjunction word, continue building word token
-            string_builder.append(word)
-          else:
-            # Word is a conjunction
-            conj_tokenized_words.append((TKN_OTHER, ' '.join(string_builder)))
-            conj_tokenized_words.append((TKN_CONJ, word))
-            string_builder = []
-
-        if len(string_builder) > 0:
-          conj_tokenized_words.append((TKN_OTHER, ' '.join(string_builder)))
-
-        processed_tokens = processed_tokens + conj_tokenized_words
-
-        if (i + 1) < len(tokens):
-          movie_title = tokens[i + 1]
-          processed_tokens.append((TKN_TITLE, movie_title))
-
-        i += 2
+      #print (processed_tokens)
 
       # Remove all empty tokens
       tagged_tokens = []
@@ -391,16 +355,18 @@ class Chatbot:
         if token != '':
           tagged_tokens.append(elem)
 
-      prev_neg_sentiment = None
       movie_sentiments = []
+
       current_sentence = ''
       current_movies = []
+      prev_neg_sentiment = None
 
       for elem in tagged_tokens:
+        print (elem)
         tag, token = elem
 
-        # skip conjunctions
-        if tag != TKN_CONJ:
+        # skip conjunctions and movie titles
+        if tag == TKN_OTHER:
           current_sentence += token + ' '
 
         # append to current_movies
@@ -410,11 +376,13 @@ class Chatbot:
         # check if end of sentence / phrase (but is the only conj that signals end of phrase)
         if (tag == TKN_CONJ and token.lower() == 'but') or (tag == TKN_OTHER and token.lower() in sentence_punctuations):
           if prev_neg_sentiment is not None:
+            # Previous sentence segment ended with negation conjunction (but)
             sentiment = prev_neg_sentiment * -1
           else:
             sentiment = self.extract_sentiment(current_sentence)
 
-          # print (current_sentence, sentiment)
+          print (current_sentence, sentiment)
+
           for movie in current_movies:
             movie_sentiments.append((movie, sentiment))
 
@@ -422,7 +390,12 @@ class Chatbot:
           current_movies = []
 
           if (tag == TKN_CONJ and token.lower() == 'but'):
+            # Track previous sentance clause sentiment.
             prev_neg_sentiment = sentiment
+
+          if (tag == TKN_OTHER and token.lower() in sentence_punctuations):
+            # Reset negated sentiment tracker.
+            prev_neg_sentiment = None
 
       return movie_sentiments
 
