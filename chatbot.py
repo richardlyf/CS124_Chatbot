@@ -117,11 +117,6 @@ class Chatbot:
       # possibly calling other functions. Although modular code is not graded,    #
       # it is highly recommended.                                                 #
       #############################################################################
-      # Check if a user can have a recommendation
-      if np.count_nonzero(self.user_ratings) >= 5 and not self.can_recommend:
-          self.can_recommend = True
-          return "Great! Now I have enough information to make recommendations.\n You can comtinue to rate movies or ask for a recommendation."
-
       # Check if a user wants a recommendation:
       if self.can_recommend and "recommend" in line:
           self.add_review = False
@@ -138,9 +133,14 @@ class Chatbot:
       # Recommend
       else:
           response = "Here are your recommendations: \n"
-          rec_indices = self.recommend(self.user_ratings, self.ratings, self.creative)
+          rec_indices = self.recommend(self.user_ratings, self.ratings, k=10, creative=self.creative)
           recs = lib.extract_movies_using_indices(self.titles, rec_indices)
           response += ', '.join(recs) + '\n Feel free to add more reviews so I can make better recommendations.'
+
+      # Check if a user can have a recommendation
+      if np.count_nonzero(self.user_ratings) >= 5 and not self.can_recommend:
+          self.can_recommend = True
+          return response + "\nGreat! Now I have enough information to make recommendations.\n You can continue to rate movies or ask for a recommendation."
 
       return response
 
