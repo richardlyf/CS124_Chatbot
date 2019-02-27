@@ -178,6 +178,26 @@ def test_extract_sentiment_for_movies():
         [("I, Robot", 1), ("Ex Machina", -1)],
         "Incorrect output for test_extract_sentiment_for_movies(\"I liked \"I, Robot\" but not \"Ex Machina\".)\"",
         orderMatters=False
+    ) and assertListEquals(
+        chatbot.extract_sentiment_for_movies("I liked \"I, Robot\" and \"Lady and the Tramp\", but not \"Ex Machina\"."),
+        [("I, Robot", 1), ("Lady and the Tramp", 1), ("Ex Machina", -1)],
+        "Incorrect output for test_extract_sentiment_for_movies(\"I liked \"I, Robot\" and \"Lady and the Tramp\", but not \"Ex Machina\".)\"",
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.extract_sentiment_for_movies("I liked \"I, Robot\", but \"Lady and the Tramp\" was even better! I really liked \"Ex Machina\" too."),
+        [("I, Robot", 1), ("Lady and the Tramp", 1), ("Ex Machina", 1)],
+        "Incorrect output for test_extract_sentiment_for_movies(\"I liked \"I, Robot\", but \"Lady and the Tramp\" was even better! I really liked \"Ex Machina\" too.\")\"",
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.extract_sentiment_for_movies("I liked \"I, Robot\", but the \"Lady and the Tramp\" was not good. But I really liked \"Ex Machina\"."),
+        [("I, Robot", 1), ("Lady and the Tramp", -1), ("Ex Machina", 1)],
+        "Incorrect output for test_extract_sentiment_for_movies(\"I liked \"I, Robot\", but the \"Lady and the Tramp\" was not good. But I really liked \"Ex Machina\".\")\"",
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.extract_sentiment_for_movies("I liked \"I, Robot\", the \"Lady and the Tramp\", and \"Ex Machina\". \"Metropolitan\", however, was quite disappointing."),
+        [("I, Robot", 1), ("Lady and the Tramp", 1), ("Ex Machina", 1), ("Metropolitan", -1)],
+        "Incorrect output for test_extract_sentiment_for_movies(\"I liked \"I, Robot\", the \"Lady and the Tramp\", and \"Ex Machina\". \"Metropolitan\", however, was quite disappointing.\")\"",
+        orderMatters=False
     ):
         print('extract_sentiment_for_movies() sanity check passed!')
     print()
@@ -271,12 +291,12 @@ def main():
     #test_recommend()
     #test_binarize()
     #test_similarity()
-    # test_process()
+    #test_process()
 
     if testing_creative:
-        test_find_movies_closest_to_title()
+        #test_find_movies_closest_to_title()
         test_extract_sentiment_for_movies()
-        test_disambiguate()
+        #test_disambiguate()
 
 if __name__ == '__main__':
     main()
