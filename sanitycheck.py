@@ -188,6 +188,16 @@ def test_extract_sentiment_for_movies():
         [("I, Robot", 1), ("Lady and the Tramp", 1), ("Ex Machina", 1)],
         "Incorrect output for test_extract_sentiment_for_movies(\"I liked \"I, Robot\", but \"Lady and the Tramp\" was even better! I really liked \"Ex Machina\" too.\")\"",
         orderMatters=False
+    ) and assertListEquals(
+        chatbot.extract_sentiment_for_movies("I liked \"I, Robot\", but the \"Lady and the Tramp\" was not good. But I really liked \"Ex Machina\"."),
+        [("I, Robot", 1), ("Lady and the Tramp", -1), ("Ex Machina", 1)],
+        "Incorrect output for test_extract_sentiment_for_movies(\"I liked \"I, Robot\", but the \"Lady and the Tramp\" was not good. But I really liked \"Ex Machina\".\")\"",
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.extract_sentiment_for_movies("I liked \"I, Robot\", the \"Lady and the Tramp\", and \"Ex Machina\". \"Metropolitan\", however, was quite disappointing."),
+        [("I, Robot", 1), ("Lady and the Tramp", 1), ("Ex Machina", 1), ("Metropolitan", -1)],
+        "Incorrect output for test_extract_sentiment_for_movies(\"I liked \"I, Robot\", the \"Lady and the Tramp\", and \"Ex Machina\". \"Metropolitan\", however, was quite disappointing.\")\"",
+        orderMatters=False
     ):
         print('extract_sentiment_for_movies() sanity check passed!')
     print()

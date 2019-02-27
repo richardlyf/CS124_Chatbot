@@ -330,23 +330,18 @@ class Chatbot:
       :returns: a list of tuples, where the first item in the tuple is a movie title,
         and the second is the sentiment in the text toward that movie
       """
-      # Sentence punctuation marks: .!?;
-      sentence_punctuations = {'.', '?', '!'}
-
       # Enums for tracking token types
       TKN_TITLE = 0
       TKN_CONJ = 1
       TKN_OTHER = 2
 
-      split_by_punc = re.split(r'\? |! |\. ', text)
       processed_tokens = []
 
-      for sentence in split_by_punc:
+      # Split text by sentence
+      for sentence in re.split(r'\? |! |\. ', text):
         tks = lib.tokenize_conj_movie_other (sentence)
         tks.append((TKN_OTHER, '.'))
-        processed_tokens = processed_tokens + tks   
-
-      #print (processed_tokens)
+        processed_tokens = processed_tokens + tks
 
       # Remove all empty tokens
       tagged_tokens = []
@@ -362,7 +357,7 @@ class Chatbot:
       prev_neg_sentiment = None
 
       for elem in tagged_tokens:
-        print (elem)
+        # print (elem)
         tag, token = elem
 
         # skip conjunctions and movie titles
@@ -374,14 +369,16 @@ class Chatbot:
           current_movies.append(token)
 
         # check if end of sentence / phrase (but is the only conj that signals end of phrase)
-        if (tag == TKN_CONJ and token.lower() == 'but') or (tag == TKN_OTHER and token.lower() in sentence_punctuations):
-          if prev_neg_sentiment is not None:
+        if (tag == TKN_CONJ and token.lower() == 'but') or (tag == TKN_OTHER and token == '.'):
+          sentiment = self.extract_sentiment(current_sentence)
+          
+          if (sentiment == 0) and (prev_neg_sentiment is not None):
             # Previous sentence segment ended with negation conjunction (but)
             sentiment = prev_neg_sentiment * -1
           else:
             sentiment = self.extract_sentiment(current_sentence)
 
-          print (current_sentence, sentiment)
+          # print (current_sentence, sentiment)
 
           for movie in current_movies:
             movie_sentiments.append((movie, sentiment))
@@ -393,7 +390,7 @@ class Chatbot:
             # Track previous sentance clause sentiment.
             prev_neg_sentiment = sentiment
 
-          if (tag == TKN_OTHER and token.lower() in sentence_punctuations):
+          if (tag == TKN_OTHER and token == '.'):
             # Reset negated sentiment tracker.
             prev_neg_sentiment = None
 
