@@ -335,21 +335,15 @@ class Chatbot:
       TKN_CONJ = 1
       TKN_OTHER = 2
 
-      processed_tokens = []
+      tagged_tokens = []
 
-      # Split text by sentence
+      # Split text by sentence, then tokenize by conjuctions, movie titles, and other words
       for sentence in re.split(r'\? |! |\. ', text):
         tks = lib.tokenize_conj_movie_other (sentence)
         tks.append((TKN_OTHER, '.'))
-        processed_tokens = processed_tokens + tks
+        tagged_tokens = tagged_tokens + tks
 
-      # Remove all empty tokens
-      tagged_tokens = []
-      for elem in processed_tokens:
-        (_, token) = elem
-        if token != '':
-          tagged_tokens.append(elem)
-
+      # Extract movie sentiments
       movie_sentiments = []
 
       current_sentence = ''
@@ -357,7 +351,6 @@ class Chatbot:
       prev_neg_sentiment = None
 
       for elem in tagged_tokens:
-        # print (elem)
         tag, token = elem
 
         # skip conjunctions and movie titles
@@ -368,31 +361,28 @@ class Chatbot:
         if tag == TKN_TITLE:
           current_movies.append(token)
 
-        # check if end of sentence / phrase (but is the only conj that signals end of phrase)
+        # check if end of sentence / phrase ('but' is the only conj that signals end of phrase)
         if (tag == TKN_CONJ and token.lower() == 'but') or (tag == TKN_OTHER and token == '.'):
           sentiment = self.extract_sentiment(current_sentence)
           
+          # If current sentence seg has neutral sentiment and previous sentence seg
+          # ended with a negation conjunction ('but')
           if (sentiment == 0) and (prev_neg_sentiment is not None):
-            # Previous sentence segment ended with negation conjunction (but)
             sentiment = prev_neg_sentiment * -1
-          else:
-            sentiment = self.extract_sentiment(current_sentence)
-
-          # print (current_sentence, sentiment)
 
           for movie in current_movies:
             movie_sentiments.append((movie, sentiment))
 
-          current_sentence = ''
-          current_movies = []
-
+          # Set / reset variables and continue processing
           if (tag == TKN_CONJ and token.lower() == 'but'):
             # Track previous sentance clause sentiment.
             prev_neg_sentiment = sentiment
-
           if (tag == TKN_OTHER and token == '.'):
             # Reset negated sentiment tracker.
             prev_neg_sentiment = None
+
+          current_sentence = ''
+          current_movies = []
 
       return movie_sentiments
 

@@ -129,7 +129,7 @@ def tokenize_conj_movie_other (text):
     TKN_TITLE = 0
     TKN_CONJ = 1
     TKN_OTHER = 2
-    
+
     processed_tokens = []
 
     tokens = text.split('\"')
@@ -167,7 +167,14 @@ def tokenize_conj_movie_other (text):
 
         i += 2
 
-    return processed_tokens
+    # Remove all empty tokens
+    tagged_tokens = []
+    for elem in processed_tokens:
+        (_, token) = elem
+        if token != '':
+            tagged_tokens.append(elem)
+
+    return tagged_tokens
 
 """
 Calculates the minimum edit distance between w1 and w2.
