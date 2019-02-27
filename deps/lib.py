@@ -114,7 +114,7 @@ def standardize_titles(titles):
 
 """
 Calculates the minimum edit distance between w1 and w2.
-Insertions, deletions, and replacements all have cost of 1.
+Insertions, deletions have cost of 1, and replacements have cost of 2.
 """
 cache = {}
 def min_edit_distance(w1, w2):
@@ -148,13 +148,7 @@ def min_edit_distance_helper(w1, w2, i1, i2, cache):
         else:
             ed2 = cache[k2] + 1
 
-        k3 = (i1-1, i2-1)
-        if k3 not in cache:
-            ed3 = min_edit_distance_helper(w1, w2, i1-1, i2-1, cache) + 2
-        else:
-            ed3 = cache[k3] + 2
-
-        ed = min(ed1, ed2, ed3)
+        ed = min(ed1, ed2)
 
     k = (i1, i2)
     cache[k] = ed

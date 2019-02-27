@@ -158,7 +158,8 @@ class Chatbot:
       title = titles[0]
 
       # Find matching movie
-      movie_index = self.find_movies_by_title(title)
+#      movie_index = self.find_movies_by_title(title)
+      movie_index = self.find_movies_closest_to_title(title)
       movies = lib.extract_movies_using_indices(self.titles, movie_index)
 
       if len(movies) == 0:
@@ -230,6 +231,9 @@ class Chatbot:
       movie_title = title
       movie_year = None
 
+      # Minimun edit distance found for all titles
+      min_dist = max_distance
+
       # Extract year from title
       movie_title, movie_year = lib.extract_year_from_title(title)
 
@@ -246,13 +250,22 @@ class Chatbot:
 
         # Filter by movie title
         if max_distance <= 0:
-          # No spelling correction
-          if movie_title.lower() == entry_title.lower():
-            movies.append(i)
+            # No spelling correction
+            if movie_title.lower() == entry_title.lower():
+                movies.append(i)
         else:
-          # Apply spelling correction
-          if lib.min_edit_distance(movie_title.lower(), entry_title.lower()) <= max_distance:
-            movies.append(i)
+            dist = lib.min_edit_distance(movie_title.lower(), entry_title.lower())
+            if dist <= max_distance:
+                movies.append((dist, i))
+                min_dist = min(min_dist, dist)
+
+      # Only keep movies that tie for smallest edit distance
+      if not max_distance <= 0:
+          min_movies = []
+          for movie in movies:
+              if movie[0] == min_dist:
+                  min_movies.append(movie[1])
+          movies = min_movies
 
       return movies
 
@@ -357,7 +370,7 @@ class Chatbot:
         # token[i] is a non-movie segment of words
         word_segment = tokens[i]
 
-        # tokenize by conjunctions, i.e. create tokens of 
+        # tokenize by conjunctions, i.e. create tokens of
         # [<non-conj-words>, <conj>, <non-conj-words>, ...]
         word_tokens = word_segment.split()
         string_builder = []
@@ -577,10 +590,10 @@ class Chatbot:
       can do and how the user can interact with it.
       """
       return """
-      Your task is to implement the chatbot as detailed in the PA6 instructions.
-      Remember: in the starter mode, movie names will come in quotation marks and
-      expressions of sentiment will be simple!
-      Write here the description for your own chatbot!
+      Hello there! I'm Marvin the Marvelous Moviebot. I am capable to recommending movies to you based on your preferences.
+      You simply need to tell me about some of the movies you've watched before and whether you liked them or not.
+      After I have gathered enough information, I'll let you know that I'm ready to make a recommendation. You can then say
+      you'd like a recommendation, and I'll work my magic! :)
       """
 
 
