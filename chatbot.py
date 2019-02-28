@@ -30,6 +30,20 @@ multi_movie_corp = [
 Can you repeat your preference with a more specific title?""",
 ]
 
+spell_corrected_corp_single = [
+"""I'm sorry, I couldn't find a movie titled \"{}\". Did you happen to mean {}?"""
+]
+
+spell_corrected_corp_single_error = [
+"""Sorry, I couldn't under stand your answer. Please answer with either \'yes\' or \'no\':
+{}"""
+]
+
+spell_corrected_corp_single_no = [
+"""OK, so you weren't talking about {} after all. 
+In that case, please check your spelling and repeat your preference, or try talking about another movie!"""
+]
+
 spell_corrected_corp = [
 """I'm sorry, I couldn't find a movie titled \"{}\". Did you happen to mean {}?
 Please check your spelling and repeat your preference, or try talking about another movie!"""
@@ -80,6 +94,13 @@ class Chatbot:
       # Becomes true once the user's made 5 recommendations.
       self.can_recommend = False
 
+      # Used for remembering movie title spell correction state.
+      self.spell_correction_answer = False
+      self.spell_correction_prompt = ''
+      self.spell_correction_movie_index = 0
+      self.spell_correction_movie_title = ''
+      self.spell_correction_review = ''
+
     #############################################################################
     # 1. WARM UP REPL                                                           #
     #############################################################################
@@ -123,25 +144,34 @@ class Chatbot:
       # possibly calling other functions. Although modular code is not graded,    #
       # it is highly recommended.                                                 #
       #############################################################################
-      # Check if a user wants a recommendation:
-      if self.can_recommend and "recommend" in line:
-          self.add_review = False
-      elif "recommend" in line:
-          return "You need to rate at least 5 movies before I can recommend anything. So what did you like or didn't like?"
+      
+      # Handle spell correction response first.
+      if self.spell_correction_answer:
+        self.spell_correction_answer = False
+        response = self.process_spell_correction_response(line)
 
-      # Add reviews
-      if self.add_review:
-          if self.creative:
-              pass
-              #response = self.add_multi_movies_rating(line)
-          else:
-              response = self.add_single_movie_rating(line)
-      # Recommend
+      # Check if a user wants a recommendation:
+      elif self.can_recommend and "recommend" in line.lower():
+        # Recommend movie(s).
+        response = "Here are your recommendations: \n"
+        rec_indices = self.recommend(self.user_ratings, self.ratings, k=10, creative=self.creative)
+        recs = lib.extract_movies_using_indices(self.titles, rec_indices)
+        response += ', '.join(recs) + '\n Feel free to add more reviews so I can make better recommendations.'
+
+      elif "recommend" in line.lower():
+        # Not enough information to recommend a movie.
+        return "You need to rate at least 5 movies before I can recommend anything. So what did you like or didn't like?"
+
       else:
-          response = "Here are your recommendations: \n"
-          rec_indices = self.recommend(self.user_ratings, self.ratings, k=10, creative=self.creative)
-          recs = lib.extract_movies_using_indices(self.titles, rec_indices)
-          response += ', '.join(recs) + '\n Feel free to add more reviews so I can make better recommendations.'
+        # Add preference / review.
+        """
+        if self.creative:
+            pass
+            #response = self.add_multi_movies_rating(line)
+        else:
+            response = self.add_single_movie_rating(line)
+        """
+        response = self.add_single_movie_rating(line)
 
       # Check if a user can have a recommendation
       if np.count_nonzero(self.user_ratings) >= 5 and not self.can_recommend:
@@ -149,6 +179,32 @@ class Chatbot:
           return response + "\nGreat! Now I have enough information to make recommendations.\n You can continue to rate movies or ask for a recommendation."
 
       return response
+
+
+    def process_spell_correction_response(self, line):
+      # Check if responding to a previous spell correction question.
+      has_y = 'y' in line.lower()
+      has_n = 'n' in line.lower()
+
+      if has_y and not has_n:
+        # Yes
+        return self.process_movie_preference (
+          self.spell_correction_movie_index, 
+          self.spell_correction_movie_title, 
+          self.spell_correction_review
+        )
+      elif has_n and not has_y:
+        return lib.getResponse(
+          spell_corrected_corp_single_no
+          ).format(self.spell_correction_movie_title)
+        # No
+      else:
+        # Unknown
+        self.spell_correction_answer = True
+        return lib.getResponse(
+          spell_corrected_corp_single_error
+          ).format(self.spell_correction_prompt)
+
 
     def add_single_movie_rating(self, line):
       """
@@ -173,15 +229,20 @@ class Chatbot:
         spell_corrected = True
 
       movies = [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
-      #quote_movies = []
-      # [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
 
       if len(movies) == 0:
         return lib.getResponse(invalid_movie_corp)
 
       elif len(movies) == 1:
         if spell_corrected:
-          return lib.getResponse(spell_corrected_corp).format(title, movies[0])
+          self.spell_correction_answer = True
+          self.spell_correction_prompt = lib.getResponse(
+            spell_corrected_corp_single).format(title, movies[0])
+          self.spell_correction_movie_index = movie_index[0]
+          self.spell_correction_movie_title = movies[0]
+          self.spell_correction_review = line
+
+          return self.spell_correction_prompt
 
       elif len(movies) > 1:
         # Build movies list with correct grammar. Final conjunction depends on case.
@@ -196,17 +257,26 @@ class Chatbot:
           formatted_movies += ' and ' + movies[-1]
           return lib.getResponse(multi_movie_corp).format(title, formatted_movies)
 
-      sentiment = self.extract_sentiment(line)
+      return self.process_movie_preference(movie_index[0], movies[0], line)
+      
+    """ Performs sentiment extraction on the user's review and updates the 
+    user_rating for the specified movie. Returns the bot's response to the
+    user as implicit confirmation.
+    """
+    def process_movie_preference (self, movie_index, movie_title, review):
+      sentiment = self.extract_sentiment(review)
 
       # Provide ackowledgement
       if sentiment == 1:
-          self.user_ratings[movie_index[0]] = 1
-          return lib.getResponse(pos_movie_corp).format(movies[0])
+        self.user_ratings[movie_index] = 1
+        return lib.getResponse(pos_movie_corp).format(movie_title)
+
       elif sentiment == 0:
-          return lib.getResponse(neutral_movie_corp).format(movies[0])
+        return lib.getResponse(neutral_movie_corp).format(movie_title)
+
       else:
-          self.user_ratings[movie_index[0]] = -1
-          return lib.getResponse(neg_movie_corp).format(movies[0])
+        self.user_ratings[movie_index] = -1
+        return lib.getResponse(neg_movie_corp).format(movie_title)
 
     def extract_titles(self, text):
       """Extract potential movie titles from a line of text.
