@@ -176,6 +176,33 @@ def tokenize_conj_movie_other (text):
 
     return tagged_tokens
 
+# Used for extracting titles from user input when no quotation marks are used.
+# Attempts to match movie_title to input_text word-by-word using a 'common
+# substring' algorithm (words don't need to be consecutive)
+def extract_title_by_word(movie_title, input_text):
+    mt_tks = movie_title.split()
+    it_tks = input_text.split()
+
+    mt_index = 0
+
+    for i in range(len(it_tks)):
+        it_word = it_tks[i]
+        mt_word = mt_tks[mt_index]
+
+        
+        # Attempts to match last word of title in the case where input has ending punctuation
+        if mt_index == (len(mt_tks) - 1):
+            if not it_word[-1].isalnum() and it_word[-1] != mt_word[-1]:
+                it_word = it_word[:-1]
+
+        if it_word == mt_word:
+            mt_index += 1
+
+        if mt_index == len(mt_tks):
+            return True
+
+    return False
+
 """
 Calculates the minimum edit distance between w1 and w2.
 Insertions, deletions have cost of 1, and replacements have cost of 2.

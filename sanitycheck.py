@@ -108,6 +108,47 @@ def test_extract_titles():
         print('extract_titles() sanity check passed!')
     print()
 
+def test_extract_titles_creative():
+    print("Testing extract_titles() creative functionality...")
+    chatbot = Chatbot(True)
+    if assertListEquals(
+        chatbot.extract_titles('I liked the notebook'),
+        ["The Notebook"],
+        "Incorrect output for extract_titles(\'I liked the notebook\')."
+    ) and assertListEquals(
+        chatbot.extract_titles('No movies here!'),
+        [],
+        "Incorrect output for extract_titles('No movies here!').",
+    ) and assertListEquals(
+        chatbot.extract_titles('I thought 10 things i hate about you was great.'),
+        ["10 Things I Hate About You", "10"],
+        "Incorrect output for extract_titles('I thought 10 things i hate about you was great.').",
+    ) and assertListEquals(
+        chatbot.extract_titles('Titanic (1997) started out terrible, but the ending was totally great and I loved it!'),
+        ["Titanic (1997)"],
+        "Incorrect output for extract_titles('Titanic (1997) started out terrible, but the ending was totally great and I loved it!').",
+    ) and assertListEquals(
+        chatbot.extract_titles('This undeniable classic is always charming and irresistible, even if far from perfect - the characters in casablanca do not always act consistently with their personalities.'),
+        ["Casablanca", 'Always', 'Perfect'],
+        "Incorrect output for extract_titles('This undeniable classic is always charming and irresistible, even if far from perfect - the characters in casablanca, for instance, do not always act consistently with their personalities.').",
+    ) and assertListEquals(
+        chatbot.extract_titles('I liked 10 things i hate about you.'),
+        ["10 Things I Hate About You", "10"],
+        "Incorrect output for extract_titles('I liked 10 things i hate about you.').",
+    ) and assertListEquals(
+        chatbot.extract_titles('Titanic (1997), started out terrible, but the ending was totally great and I loved it!'),
+        ["Titanic (1997)"],
+        "Incorrect output for extract_titles('Titanic (1997), started out terrible, but the ending was totally great and I loved it!').",
+    ) and assertListEquals(
+        chatbot.extract_titles('I liked 10, things i hate about you.'),
+        ["10"],
+        "Incorrect output for extract_titles('I liked 10, things i hate about you.').",
+    ):
+        print('extract_titles() sanity check passed!')
+    print()
+
+    """ """ 
+
 def test_find_movies_by_title():
     print("Testing find_movies_by_title() functionality...")
     chatbot = Chatbot(False)
@@ -291,12 +332,13 @@ def main():
     #test_recommend()
     #test_binarize()
     #test_similarity()
-    test_process()
+    #test_process()
 
     if testing_creative:
         #test_find_movies_closest_to_title()
-        test_extract_sentiment_for_movies()
+        #test_extract_sentiment_for_movies()
         #test_disambiguate()
+        test_extract_titles_creative()
 
 if __name__ == '__main__':
     main()

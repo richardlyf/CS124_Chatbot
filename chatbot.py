@@ -82,10 +82,8 @@ class Chatbot:
       self.sentiment = movielens.sentiment()
       self.sentiment = lib.stem_map(self.sentiment)
 
-      ratings = self.binarize(ratings)
-
       # Binarize the movie ratings before storing the binarized matrix.
-      self.ratings = ratings
+      self.ratings = self.binarize(ratings)
 
       # Vector that keeps track of user movie preference
       self.user_ratings = np.zeros(len(self.titles))
@@ -182,7 +180,7 @@ class Chatbot:
 
       return response
 
-
+    # Handles the user's response to a movie-title spelling correction confirmation.
     def process_spell_correction_response(self, line):
       # Check if responding to a previous spell correction question.
       has_y = 'y' in line.lower()
@@ -238,7 +236,11 @@ class Chatbot:
       movies = [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
 
       if len(movies) == 0:
-        return lib.getResponse(invalid_movie_corp)
+        if self.creative:
+          # parse input and see if we can generate some arbitrary response
+          return self.generate_arbitrary_response(line)
+        else:
+          return lib.getResponse(invalid_movie_corp)
 
       elif len(movies) == 1:
         if spell_corrected:
@@ -262,6 +264,11 @@ class Chatbot:
 
       return self.process_movie_preference(movie_index[0], movies[0], line)
       
+    # Generates some arbitrary response depending on user input
+    def generate_arbitrary_response(line):
+      raise
+
+    # Handles the case where the user supplies multiple movie titles.
     def process_multi_titles(self, line):
       movie_sentiments = self.extract_sentiment_for_movies(line)
       pos_titles = []
@@ -362,6 +369,18 @@ class Chatbot:
       e_matches = re.findall(quote_pat, text)
       for title in e_matches:
         titles.append(title)
+
+      if self.creative and len(titles) == 0:
+        # Attempt to extract titles without explicit quotation marks
+        for elem in self.titles:
+          title, year, _ = elem
+          title_with_year = title + ' ({})'.format(year)
+
+          if lib.extract_title_by_word(title_with_year.lower(), text.lower()):
+            # Title and year together are unique identifiers of a movie
+            return [title_with_year,]
+          elif lib.extract_title_by_word(title.lower(), text.lower()):
+            titles.append(title)
 
       return titles
 
