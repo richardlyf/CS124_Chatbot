@@ -166,11 +166,14 @@ class Chatbot:
 
       else:
         # Add preference / review.
+        """
         if self.creative:
             response = self.add_single_movie_rating(line)
             #response = self.add_multi_movies_rating(line)
         else:
             response = self.add_single_movie_rating(line)
+        """
+        response = self.add_movie_ratings(line)
 
       # Check if a user can have a recommendation
       if np.count_nonzero(self.user_ratings) >= 5 and not self.can_recommend:
@@ -205,17 +208,22 @@ class Chatbot:
           ).format(self.spell_correction_prompt)
 
 
-    def add_single_movie_rating(self, line):
+    def add_movie_ratings(self, line):
       """
       Takes in a user input in the form of a movie review.
       Returns a response in the form of a string. The response either reprompts the user or
       confirms the review is received.
       (starter mode) Extracts only one movie.
       """
-      # Get exactly one title
+      # Extract titles from user input.
       titles = self.extract_titles(line)
+
       if len(titles) != 1:
+        if self.creative:
+          return self.process_multi_titles(line)
+        else:
           return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
+      
       title = titles[0]
 
       # Search for a matching movie.
@@ -245,25 +253,76 @@ class Chatbot:
 
       elif len(movies) > 1:
         # Build movies list with correct grammar. Final conjunction depends on case.
-        formatted_movies = movies[0]
-        if len(movies) > 2:
-          formatted_movies += ', ' + ', '.join(movies[1:-1]) + ','
-
         if spell_corrected:
-          formatted_movies += ' or ' + movies[-1]
+          formatted_movies = lib.concatenate_titles(movies, 'or')
           return lib.getResponse(spell_corrected_corp).format(title, formatted_movies)
         else:
-          formatted_movies += ' and ' + movies[-1]
+          formatted_movies = lib.concatenate_titles(movies, 'and')
           return lib.getResponse(multi_movie_corp).format(title, formatted_movies)
 
       return self.process_movie_preference(movie_index[0], movies[0], line)
       
+    def process_multi_titles(self, line):
+      movie_sentiments = self.extract_sentiment_for_movies(line)
+      pos_titles = []
+      neg_titles = []
+      neutral_titles = []
+      unprocessable_titles = []
+
+      for elem in movie_sentiments:
+        movie_title, sentiment = elem
+        movie_indexes = self.find_movies_by_title(movie_title)
+        title = '\"' + movie_title + '\"'
+
+        if len(movie_indexes) == 1:
+          self.process_movie_preference(movie_indexes[0], movie_title, None, sentiment)
+
+          if sentiment < 0:
+            neg_titles.append(title)
+          elif sentiment == 0:
+            neutral_titles.append(title)
+          else:
+            pos_titles.append(title)
+        else:
+          unprocessable_titles.append(title)
+
+      # Build response.
+      response = ''
+      prev_sentence = False
+
+      if len(pos_titles) > 0:
+        response += "You liked {}.".format(lib.concatenate_titles(pos_titles, 'and'))
+        prev_sentence = True
+      if len(neg_titles) > 0:
+        if prev_sentence:
+          response += '\n'
+        response += "You didn't like {}.".format(lib.concatenate_titles(neg_titles, 'and'))
+        prev_sentence = True
+      if len(neutral_titles) > 0:
+        if prev_sentence:
+          response += '\n'
+        response += "I couldn't really tell if you liked {}.".format(lib.concatenate_titles(neutral_titles, 'and'))
+        prev_sentence = True
+      if len(unprocessable_titles) > 0:
+        if prev_sentence:
+          response += '\n'
+        response += ("I couldn't locate a single specific movie for"
+          + " {} ".format(lib.concatenate_titles(unprocessable_titles, 'or'))
+          + "- Please check your spelling or try specifying the year,"
+          + " e.g. \"Titanic (1997)\".")
+   
+      return response
+
+
     """ Performs sentiment extraction on the user's review and updates the 
     user_rating for the specified movie. Returns the bot's response to the
     user as implicit confirmation.
     """
-    def process_movie_preference (self, movie_index, movie_title, review):
-      sentiment = self.extract_sentiment(review)
+    def process_movie_preference (self, movie_index, movie_title, review, usr_senti=None):
+      if usr_senti is None:
+        sentiment = self.extract_sentiment(review)
+      else:
+        sentiment = usr_senti
 
       # Provide ackowledgement
       if sentiment == 1:
@@ -276,6 +335,7 @@ class Chatbot:
       else:
         self.user_ratings[movie_index] = -1
         return lib.getResponse(neg_movie_corp).format(movie_title)
+
 
     def extract_titles(self, text):
       """Extract potential movie titles from a line of text.

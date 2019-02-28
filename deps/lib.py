@@ -261,4 +261,11 @@ def getResponse(corpus):
     index = random.randint(0, len(corpus) - 1)
     return corpus[index]
 
-
+# Concatenates a list of titles gramatically using the specified conjuction
+def concatenate_titles(titles, final_conj):
+    if len(titles) == 1:
+        return titles[0]
+    if len(titles) == 2:
+        return titles[0] + " " + final_conj + " " + titles[1]
+    if len(titles) > 2:
+        return ', '.join(titles[0:-1]) + ', ' + final_conj + ' ' + titles[-1]
