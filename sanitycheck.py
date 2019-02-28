@@ -173,6 +173,35 @@ def test_find_movies_by_title():
         [10],
         "Incorrect output for find_movies_by_title('The American President')."
     ) and assertListEquals(
+        chatbot.find_movies_by_title("The AMERICAN President"),
+        [],
+        "Incorrect output for find_movies_by_title('The AMERICAN President')."
+    ) and assertListEquals(
+        chatbot.find_movies_by_title("Titanic"),
+        [1359, 2716],
+        "Incorrect output for find_movies_by_title('Titanic').",
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.find_movies_by_title("Titanic (1997)"),
+        [1359],
+        "Incorrect output for find_movies_by_title('Titanic (1997)').",
+    ):
+        print('find_movies_by_title() sanity check passed!')
+    print()
+
+def test_find_movies_by_title_creative():
+    print("Testing find_movies_by_title() functionality...")
+    chatbot = Chatbot(True)
+
+    if assertListEquals(
+        chatbot.find_movies_by_title("The American President"),
+        [10],
+        "Incorrect output for find_movies_by_title('The American President')."
+    ) and assertListEquals(
+        chatbot.find_movies_by_title("The AMERICAN President"),
+        [10],
+        "Incorrect output for find_movies_by_title('The AMERICAN President')."
+    ) and assertListEquals(
         chatbot.find_movies_by_title("Titanic"),
         [1359, 2716],
         "Incorrect output for find_movies_by_title('Titanic').",
@@ -327,7 +356,7 @@ def main():
     testing_creative = args.creative
 
     #test_extract_titles()
-    #test_find_movies_by_title()
+    test_find_movies_by_title()
     #test_extract_sentiment()
     #test_recommend()
     #test_binarize()
@@ -335,10 +364,11 @@ def main():
     #test_process()
 
     if testing_creative:
+        test_find_movies_by_title_creative()
         #test_find_movies_closest_to_title()
         #test_extract_sentiment_for_movies()
         #test_disambiguate()
-        test_extract_titles_creative()
+        #test_extract_titles_creative()
 
 if __name__ == '__main__':
     main()

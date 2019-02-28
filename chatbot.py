@@ -462,8 +462,13 @@ class Chatbot:
         # Filter by movie title
         if max_distance <= 0:
             # No spelling correction
-            if movie_title.lower() == entry_title.lower():
-                movies.append(i)
+            if self.creative:
+              # Handle differing capitalizations
+              if movie_title.lower() == entry_title.lower():
+                  movies.append(i)
+            else:
+              if movie_title == entry_title:
+                  movies.append(i)
         else:
             dist = lib.min_edit_distance(movie_title.lower(), entry_title.lower())
             if dist <= max_distance:
