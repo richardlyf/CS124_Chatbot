@@ -17,7 +17,7 @@ EDIT_DIST = 3
 # Opening greeting
 greeting_corp = [
 "Please tell me about movies you've liked or didn't like so I can make you some recommendations.",
-"Please tell me about movies you've watched"
+"Please tell me about movies you've watched."
 ]
 
 # Movie title successfully extracted but is invalid
@@ -26,12 +26,18 @@ invalid_movie_corp = [
 ]
 
 multi_movie_corp = [
-"Ahh, I have found more than one movie called {}: {}, {} \nCan you repeat your preference with a more specific title?",
+"""Ahh, I have found more than one movie called \"{}\". There is {}.
+Can you repeat your preference with a more specific title?""",
+]
+
+spell_corrected_corp = [
+"""I'm sorry, I couldn't find a movie titled \"{}\". Did you happen to mean {}?
+Please check your spelling and repeat your preference, or try talking about another movie!"""
 ]
 
 pos_movie_corp = [
 "You liked {}, got it!",
-"Ok, so you enjoyed {}",
+"Ok, so you enjoyed {}.",
 "{}, good choice!"
 ]
 
@@ -157,15 +163,38 @@ class Chatbot:
           return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
       title = titles[0]
 
-      # Find matching movie
-#      movie_index = self.find_movies_by_title(title)
-      movie_index = self.find_movies_closest_to_title(title)
-      movies = lib.extract_movies_using_indices(self.titles, movie_index)
+      # Search for a matching movie.
+      movie_index = self.find_movies_by_title(title)
+      spell_corrected = False
+
+      # Try enabling spell correction if no movies were found.
+      if len (movie_index) == 0:
+        movie_index = self.find_movies_closest_to_title(title)
+        spell_corrected = True
+
+      movies = [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
+      #quote_movies = []
+      # [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
 
       if len(movies) == 0:
-          return lib.getResponse(invalid_movie_corp)
+        return lib.getResponse(invalid_movie_corp)
+
+      elif len(movies) == 1:
+        if spell_corrected:
+          return lib.getResponse(spell_corrected_corp).format(title, movies[0])
+
       elif len(movies) > 1:
-          return lib.getResponse(multi_movie_corp).format(title, movies[0], ', '.join(movies[1:5]))
+        # Build movies list with correct grammar. Final conjunction depends on case.
+        formatted_movies = movies[0]
+        if len(movies) > 2:
+          formatted_movies += ', ' + ', '.join(movies[1:-1]) + ','
+
+        if spell_corrected:
+          formatted_movies += ' or ' + movies[-1]
+          return lib.getResponse(spell_corrected_corp).format(title, formatted_movies)
+        else:
+          formatted_movies += ' and ' + movies[-1]
+          return lib.getResponse(multi_movie_corp).format(title, formatted_movies)
 
       sentiment = self.extract_sentiment(line)
 
