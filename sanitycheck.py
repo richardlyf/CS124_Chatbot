@@ -121,7 +121,7 @@ def test_extract_titles_creative():
         "Incorrect output for extract_titles('No movies here!').",
     ) and assertListEquals(
         chatbot.extract_titles('I thought 10 things i hate about you was great.'),
-        ["10 Things I Hate About You", "10"],
+        ["10 Things I Hate About You"],
         "Incorrect output for extract_titles('I thought 10 things i hate about you was great.').",
     ) and assertListEquals(
         chatbot.extract_titles('Titanic (1997) started out terrible, but the ending was totally great and I loved it!'),
@@ -133,7 +133,7 @@ def test_extract_titles_creative():
         "Incorrect output for extract_titles('This undeniable classic is always charming and irresistible, even if far from perfect - the characters in casablanca, for instance, do not always act consistently with their personalities.').",
     ) and assertListEquals(
         chatbot.extract_titles('I liked 10 things i hate about you.'),
-        ["10 Things I Hate About You", "10"],
+        ["10 Things I Hate About You"],
         "Incorrect output for extract_titles('I liked 10 things i hate about you.').",
     ) and assertListEquals(
         chatbot.extract_titles('Titanic (1997), started out terrible, but the ending was totally great and I loved it!'),

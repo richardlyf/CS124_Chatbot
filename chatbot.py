@@ -94,6 +94,9 @@ class Chatbot:
       # Becomes true once the user's made 5 recommendations.
       self.can_recommend = False
 
+      # Flag for if quoteless movie title extraction was performed
+      self.quoteless_title_extraction = False
+
       # Used for remembering movie title spell correction state.
       self.spell_correction_answer = False
       self.spell_correction_prompt = ''
@@ -216,12 +219,29 @@ class Chatbot:
       # Extract titles from user input.
       titles = self.extract_titles(line)
 
-      if len(titles) != 1:
+      if len(titles) == 0:
         if self.creative:
-          return self.process_multi_titles(line)
+          # parse input and see if we can generate some arbitrary response
+          return self.generate_arbitrary_response(line)
         else:
           return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
-      
+
+      # At least one title extracted
+      if self.quoteless_title_extraction:
+        if len(titles) > 1:
+          return ("Sorry, I didn't quite catch that. " +
+            "I can only process a single quoteless title currently, and I think you might've mentioned " +
+            "{}.\nPlease try encolosing your movie".format(lib.concatenate_titles(
+              [('\"{}\"'.format(t)) for t in titles], 'and')
+            ) +
+            " titles with \"\" or talking only about a single movie.")
+      else:
+        if len(titles) != 1:
+          if self.creative:
+            return self.process_multi_titles(line)
+          else:
+            return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
+          
       title = titles[0]
 
       # Search for a matching movie.
@@ -236,11 +256,7 @@ class Chatbot:
       movies = [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
 
       if len(movies) == 0:
-        if self.creative:
-          # parse input and see if we can generate some arbitrary response
-          return self.generate_arbitrary_response(line)
-        else:
-          return lib.getResponse(invalid_movie_corp)
+        return lib.getResponse(invalid_movie_corp)
 
       elif len(movies) == 1:
         if spell_corrected:
@@ -265,8 +281,8 @@ class Chatbot:
       return self.process_movie_preference(movie_index[0], movies[0], line)
       
     # Generates some arbitrary response depending on user input
-    def generate_arbitrary_response(line):
-      raise
+    def generate_arbitrary_response(self, line):
+      return "<TODO: GENERATE SOME ARBITRARY RESPONSE>"
 
     # Handles the case where the user supplies multiple movie titles.
     def process_multi_titles(self, line):
@@ -370,6 +386,7 @@ class Chatbot:
       for title in e_matches:
         titles.append(title)
 
+      self.quoteless_title_extraction = False
       if self.creative and len(titles) == 0:
         # Attempt to extract titles without explicit quotation marks
         for elem in self.titles:
@@ -380,7 +397,24 @@ class Chatbot:
             # Title and year together are unique identifiers of a movie
             return [title_with_year,]
           elif lib.extract_title_by_word(title.lower(), text.lower()):
-            titles.append(title)
+            # Remove existing titles that are substrings of current title
+            titles_to_remove = []
+            for t in titles:
+              if t.lower() in title.lower():
+                titles_to_remove.append(t)
+            for t in titles_to_remove:
+              titles.remove(t)
+
+            # Append current title to list only if not substring of any existing title
+            append_title = True
+            for t in titles:
+              if title.lower() in t.lower():
+                append_title = False
+            if append_title:
+              titles.append(title)
+
+        if len(titles) > 0:
+          self.quoteless_title_extraction = True
 
       return titles
 
@@ -471,9 +505,10 @@ class Chatbot:
       resets = ['but', 'however']
 
       # Remove movie names from the text
+      text = text.lower()
       titles = self.extract_titles(text)
       for title in titles:
-        text = text.replace(title, '')
+        text = text.replace(title.lower(), '')
 
       words_stemmed = lib.stem_text(text)
       words = words_stemmed.split()
@@ -526,6 +561,8 @@ class Chatbot:
       TKN_OTHER = 2
 
       tagged_tokens = []
+
+      # TODO: need to tokenize by non-quote movies as well
 
       # Split text by sentence, then tokenize by conjuctions, movie titles, and other words
       for sentence in re.split(r'\? |! |\. ', text):
