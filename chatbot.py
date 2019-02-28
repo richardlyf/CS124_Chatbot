@@ -89,8 +89,10 @@ class Chatbot:
 
       # Vector that keeps track of user movie preference
       self.user_ratings = np.zeros(len(self.titles))
+      
       # Flag that user can update by talking to the chatbot. Set to false when the user asks for a recommendation
-      self.add_review = True
+      # self.add_review = True
+      
       # Becomes true once the user's made 5 recommendations.
       self.can_recommend = False
 
@@ -146,15 +148,15 @@ class Chatbot:
       #############################################################################
       
       # Handle spell correction response first.
-      if self.spell_correction_answer:
+      if self.creative and self.spell_correction_answer:
         self.spell_correction_answer = False
         response = self.process_spell_correction_response(line)
 
       # Check if a user wants a recommendation:
       elif self.can_recommend and "recommend" in line.lower():
         # Recommend movie(s).
-        response = "Here are your recommendations: \n"
-        rec_indices = self.recommend(self.user_ratings, self.ratings, k=10, creative=self.creative)
+        response = "Here are the top 5 recommendations I have for you: \n"
+        rec_indices = self.recommend(self.user_ratings, self.ratings, k=5, creative=self.creative)
         recs = lib.extract_movies_using_indices(self.titles, rec_indices)
         response += ', '.join(recs) + '\n Feel free to add more reviews so I can make better recommendations.'
 
@@ -164,14 +166,11 @@ class Chatbot:
 
       else:
         # Add preference / review.
-        """
         if self.creative:
-            pass
+            response = self.add_single_movie_rating(line)
             #response = self.add_multi_movies_rating(line)
         else:
             response = self.add_single_movie_rating(line)
-        """
-        response = self.add_single_movie_rating(line)
 
       # Check if a user can have a recommendation
       if np.count_nonzero(self.user_ratings) >= 5 and not self.can_recommend:
@@ -224,7 +223,7 @@ class Chatbot:
       spell_corrected = False
 
       # Try enabling spell correction if no movies were found.
-      if len (movie_index) == 0:
+      if self.creative and len (movie_index) == 0:
         movie_index = self.find_movies_closest_to_title(title)
         spell_corrected = True
 
