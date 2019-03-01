@@ -210,6 +210,31 @@ def test_find_movies_by_title_creative():
         [7463, 8377],
         "Incorrect output for find_movies_by_title('Percy Jackson')",
         orderMatters=False
+    ) and assertListEquals(
+        chatbot.find_movies_by_title("Huang gu shi jie"),
+        [792],
+        "Incorrect output for find_movies_by_title('Huang gu shi jie')",
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.find_movies_by_title("Gojira"),
+        [1873, 1874, 1875, 3090, 4244, 6070],
+        "Incorrect output for find_movies_by_title('Gojira')",
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.find_movies_by_title("Alive & Kicking"),
+        [1306],
+        "Incorrect output for find_movies_by_title('Alive & Kicking')",
+        orderMatters=False
+    )  and assertListEquals(
+        chatbot.find_movies_by_title("Las Vampiras"),
+        [2585],
+        "Incorrect output for find_movies_by_title('Las Vampiras')",
+        orderMatters=False
+    )  and assertListEquals(
+        chatbot.find_movies_by_title("Phantom Love"),
+        [2845],
+        "Incorrect output for find_movies_by_title('Phantom Love')",
+        orderMatters=False
     ):
         print('find_movies_by_title() sanity check passed!')
     print()
