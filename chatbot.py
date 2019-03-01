@@ -67,6 +67,17 @@ neg_movie_corp = [
 "{} is no good, noted."
 ]
 
+catchall_corp = [
+"I see.",
+"Interesting.",
+"Wow.",
+"Sure.",
+"Okay.",
+"That's good to know.",
+"Is that so?",
+]
+
+
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
 
@@ -270,10 +281,73 @@ class Chatbot:
 
     def generate_arbitrary_response(self, line):
       """
-      Used by add_movie_ratings when no movie titles are found
       Generates some arbitrary response depending on user input
       """
-      return "<TODO: GENERATE SOME ARBITRARY RESPONSE>"
+      if len (re.split(r'\? |! |\. ', line)) > 1:
+        # Too many sentences
+        return "Woah there, slow down! I can only understand one sentence at a time."
+
+      end_punc = {'.', '!', '?', ',', ';'}
+      if line[-1] in end_punc:
+        line = line[:-1]
+
+      q_words = {'who', 'what', 'when', 'where', 'why', 'how'}
+      yn_q_words = {'did', 'do', 'can', 'may', 'will'}
+      tobe_verbs = {'is', 'are', 'was', 'were'}
+
+      i_you_dict = {'me':'you', 'i':'you', 'my':'your', 'myself':'yourself', 'you':'me', 'your':'my', 'yourself':'myself'}
+
+      tokens = line.split()
+      if len(tokens) == 0:
+        return "Oops, looks like you pressed enter without typing anything :)"
+      if len(tokens) <= 2:
+        first_word = tokens[0].lower()
+        if first_word in q_words or first_word in yn_q_words:
+          # echo question
+          if len(tokens) == 1:
+            return "I don't know - {}?".format(first_word)
+          else:
+            second_word = tokens[1].lower()
+            if second_word in i_you_dict:
+              second_word = i_you_dict[second_word]
+            return "I don't know - {} {}?".format(first_word, second_word)
+        # arbitrary response
+        return ("{} But why don't we try talking more about movies?".format(lib.getResponse(catchall_corp))
+        + " After all, I am Marvin the Marvelous 'Movie' bot :)")
+
+      first_word = tokens[0]
+      second_word = tokens[1]
+      last_words = ' '.join(tokens[2:])
+
+      last_words_flipped_builder = []
+      for tkn in tokens[2:]:
+        if tkn.lower() in i_you_dict:
+          last_words_flipped_builder.append(i_you_dict[tkn.lower()])
+        else:
+          last_words_flipped_builder.append(tkn)
+      last_words_flipped = ' '.join(last_words_flipped_builder)
+      
+      if first_word.lower() in q_words and second_word.lower() in tobe_verbs:
+        return "I don't know {} {} {}.".format(first_word.lower(), last_words_flipped, second_word.lower())
+      
+      elif first_word.lower() == 'can' and second_word.lower() == 'you':
+        return "Sorry, but I probably can't {}.".format(last_words_flipped)
+      
+      elif first_word.lower() == 'did' and second_word.lower() == 'you':
+        return "I'm not sure, but I probably didn't {}.".format(last_words_flipped)
+
+      elif first_word.lower() == 'do' and second_word.lower() == 'you':
+        return "Sorry, but I probably don't {}.".format(last_words_flipped)
+
+      elif first_word.lower() == 'will' and second_word.lower() == 'you':
+        return "I'm not sure, but I probably won't {}.".format(last_words_flipped)
+
+      elif first_word.lower() in q_words or first_word.lower() in yn_q_words:
+        return "I don't know, {}? The world is full of mysteries...".format(first_word.lower() + ' ' + second_word + ' ' + last_words)
+      
+      else:
+        return ("{} But why don't we try talking more about movies?".format(lib.getResponse(catchall_corp))
+        + " After all, I am Marvin the Marvelous 'Movie' bot :)")
 
     def process_multi_titles(self, line):
       """
