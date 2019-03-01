@@ -475,9 +475,7 @@ class Chatbot:
             if self.creative:
               # Handle differing capitalizations
               # If user inputs "scream", should find all movies containing "scream" but not "screams" / "screaming"
-              title_pos = entry_title.lower().find(movie_title.lower())
-              title_end_pos = title_pos + len(movie_title)
-              if title_pos != -1 and (title_end_pos == len(entry_title) or not entry_title[title_end_pos].isalpha()):
+              if lib.title_contains_words(movie_title, entry_title):
                   movies.append(i)
             else:
               if movie_title == entry_title:
@@ -673,6 +671,37 @@ class Chatbot:
       """
       clarification = clarification.lower()
 
+      # List of full movies names with years of all candidates
+      movie_list = lib.extract_movies_using_indices(self.titles, candidates)
+      # Should be set to True once the list shrinks
+      clarified = False
+
+      ### Clarification by year ###
+      # Assume the user enters a sentence that contains exactly one year number which clarifies
+      year_pat = r'\b\(?([12][0-9]{3})\)?\b'
+      year_matches = re.findall(year_pat, clarification)
+
+      if len(year_matches) == 1 and not clarified:
+          year = year_matches[0]
+
+          # Loops through each movie and for every movie that contains the year, store that movie's index in new candidates
+          # Now candidates should contain movie indices for movies that have the year somewhere in its title
+          candidates = [candidates[i] for i in range(len(candidates)) if lib.title_contains_words(year, movie_list[i])]
+          clarified = True
+
+      ### Clarification by name ###
+      # Assume the user enters an exact substring of the movie title. eg: Using "Scorcerer's Stone" to clarify "Harry Potter and the Scorcerer's Stone"
+      if not clarified:
+          potential_candidates = [candidates[i] for i in range(len(candidates)) if lib.title_contains_words(clarification.strip(), movie_list[i][:-6])] #-6 because we don't include the year of the movie
+          if len(potential_candidates) < len(candidates) and potential_candidates != []:
+              candidates = potential_candidates
+              clarified = True
+
+      # TODO the following strategy may be unnecessary
+      # If the previous methods do not emliminate any options
+      # Reextract movies from the clarification and check if there are any intersections
+
+      return candidates
 
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #

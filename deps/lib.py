@@ -206,6 +206,28 @@ def extract_title_by_word(movie_title, input_text):
     return False
 
 """
+Used to determine if a string is a word-by-word substring of the movie title
+Takes in the substring to check and a movie title
+Returns True if the substring is found inside the movie title and False otherwise
+Empty string should return False
+
+Example:
+title_contains_words("scream", "Scream") --> True
+title_contains_words("scream", "Scream 2") --> True
+title_contains_words("scream", "Screaming") --> False
+title_contains_words("", "Some movie") --> False
+"""
+def title_contains_words(substring, movie_title):
+    if substring == "":
+        return False
+    substring_pos = movie_title.lower().find(substring.lower())
+    substring_end_pos = substring_pos + len(substring)
+    if substring_pos != -1 and (substring_end_pos == len(movie_title) or not movie_title[substring_end_pos].isalpha()):
+        return True
+
+    return False
+
+"""
 Calculates the minimum edit distance between w1 and w2.
 Insertions, deletions have cost of 1, and replacements have cost of 2.
 """

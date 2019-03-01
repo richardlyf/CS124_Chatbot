@@ -153,21 +153,6 @@ def test_find_movies_by_title():
     print("Testing find_movies_by_title() functionality...")
     chatbot = Chatbot(False)
 
-    """
-    chatbot.find_movies_by_title("ABC (2019)")
-    chatbot.find_movies_by_title("ABC(2019)")
-    chatbot.find_movies_by_title("ABC (123)")
-    chatbot.find_movies_by_title("ABC (20123)")
-    chatbot.find_movies_by_title("ABC (201A)")
-    chatbot.find_movies_by_title("ABC1234")
-    chatbot.find_movies_by_title("ABC 2012")
-    print (chatbot.titles[217])
-    chatbot.find_movies_by_title("An ABC (2019)")
-    chatbot.find_movies_by_title("ABC THE (2019)")
-    chatbot.find_movies_by_title("The Ant")
-    return
-    """
-
     if assertListEquals(
         chatbot.find_movies_by_title("The American President"),
         [10],
@@ -306,12 +291,29 @@ def test_disambiguate():
     print("Testing disambiguate() functionality...")
     chatbot = Chatbot(True)
 
-    clarification = "1997"
-    candidates = [1359, 2716]
+    clarification1 = "1997"
+    candidates1 = [1359, 2716]
+
+    clarification2 = "2"
+    candidates2 = [1142, 1357, 2629, 546]
+
+    clarification3 = "sorcerer's stone"
+    candidates3 = [3812, 4325, 5399, 6294, 6735, 7274, 7670, 7842]
+
     if assertListEquals(
-        chatbot.disambiguate(clarification, candidates),
+        chatbot.disambiguate(clarification1, candidates1),
         [1359],
-        "Incorrect output for disambiguate('{}', {})".format(clarification, candidates),
+        "Incorrect output for disambiguate('{}', {})".format(clarification1, candidates1),
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.disambiguate(clarification2, candidates2),
+        [1357],
+        "Incorrect output for disambiguate('{}', {})".format(clarification2, candidates2),
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.disambiguate(clarification3, candidates3),
+        [3812],
+        "Incorrect output for disambiguate('{}', {})".format(clarification3, candidates3),
         orderMatters=False
     ):
         print('disambiguate() sanity check passed!')
@@ -377,10 +379,10 @@ def main():
 
     if testing_creative:
         test_find_movies_by_title_creative()
-        test_find_movies_closest_to_title()
+        #test_find_movies_closest_to_title()
         test_extract_sentiment_for_movies()
-        #test_disambiguate()
-        #test_extract_titles_creative()
+        test_disambiguate()
+        test_extract_titles_creative()
 
 if __name__ == '__main__':
     main()
