@@ -981,10 +981,51 @@ class Chatbot:
       can do and how the user can interact with it.
       """
       return """
-      Hello there! I'm Marvin the Marvelous Moviebot. I am capable to recommending movies to you based on your preferences.
-      You simply need to tell me about some of the movies you've watched before and whether you liked them or not.
-      After I have gathered enough information, I'll let you know that I'm ready to make a recommendation. You can then say
-      you'd like a recommendation, and I'll work my magic! :)
+      Hello there! I'm Marvin the Marvelous Moviebot!
+
+      (∩｀-´)⊃━☆ﾟ.*･｡ﾟ
+
+      I can recommend movies to you based on your preferences. You simply need
+      to tell me about some of the movies you've watched before and what you
+      thought of each movie. After I have gathered enough information, I'll let
+      you know that I'm ready to make a recommendation. You can then request a
+      recommendation, and I'll work my magic!
+
+      ¸¸.•*¨*•♫♪¸¸.•*¨*•♫♪¸¸.•*¨*•♫♪¸¸.•*¨*•♫♪¸¸.•*¨*•♫♪¸¸.•*¨*•♫♪¸¸.•*¨*•♫♪
+
+      Creative features:
+
+      To enable each creative feature while chatting with me, set its
+      corresponding global flag in \"chatbot.py\" (line 6) to True. Likewise,
+      to disable a creative feature, set its corresponding flag to False. 
+      Note that the '--creative' flag must also be specified in order for any
+      creative feature to take effect.
+
+      The implemented creative features (and their associated flags) are:
+
+      - Identifying movies without quotation marks and correct capitalization
+        (part 1)
+        Flag: use_quoteless_caseless_extraction
+
+      - Identifying movies without quotation marks and correct capitalization
+        (part 2)
+        Flag: <NO FLAG>, specifiying the '--creative' flag enables this feature
+
+      - Disambiguation (part 1)
+        Flag: <TODO @Richard>
+
+      - Responding to arbitrary input
+        Flag: use_arbitrary_input_response
+
+      - Dialogue for spell-checking
+        Flag: use_title_spell_correction
+
+      - Dialogue for disambiguation
+        Flag: <TODO @Richard>
+
+      - Communicating sentiments and movies extracted to the user given
+        multiple-movie input
+        Flag: use_multiple_movies_sentiment_extraction
       """
 
 
