@@ -59,7 +59,7 @@ pos_movie_corp = [
 ]
 
 neutral_movie_corp = [
-"I'm not sure if you liked {} or not. Can you tell me more? Your next response can help me decide."
+"I'm not sure if you liked {} or not. Can you tell me more? Your next response can help me decide.\nYou can also choose to not answer by saying \"No\". "
 ]
 
 neg_movie_corp = [
@@ -164,10 +164,14 @@ class Chatbot:
         response = self.process_spell_correction_response(line)
 
       # Handle user response to update movie preference first.
-      if self.creative and self.preference_update_answer:
+      # User is allowed to answer No and this part of the code will not execute
+      elif self.creative and self.preference_update_answer:
+          if line[:2].lower() != 'no':
+              senti = self.extract_sentiment(line)
+              response = self.process_movie_preference(self.preference_update_movie_index, self.preference_update_movie_title, review=None, usr_senti=senti)
+          else:
+              response = "Ok, that's fine. Let's move on. Tell me something else."
           self.preference_update_answer = False
-          senti = self.extract_sentiment(line)
-          response = self.process_movie_preference(self.preference_update_movie_index, self.preference_update_movie_title, review=None, usr_senti=senti)
 
       # Check if a user wants a recommendation:
       elif self.can_recommend and "recommend" in line.lower():
