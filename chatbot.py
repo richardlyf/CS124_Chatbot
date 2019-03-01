@@ -75,6 +75,7 @@ catchall_corp = [
 "Okay.",
 "That's good to know.",
 "Is that so?",
+"Got it."
 ]
 
 
@@ -124,6 +125,15 @@ class Chatbot:
       self.preference_update_answer = False
       self.preference_update_movie_index = 0
       self.preference_update_movie_title = 0
+
+      # Creative feature flags
+
+      # True to enable title extraction without quotes
+      self.use_quoteless_caseless_extraction = False
+      self.use_title_spell_correction = True
+      self.use_multiple_movies_sentiment_extraction = True
+      self.use_arbitrary_input_response = True
+      self.disambiguate_extracted_titles = None # TODO
 
     #############################################################################
     # 1. WARM UP REPL                                                           #
@@ -254,7 +264,7 @@ class Chatbot:
 
       ### No titles are extracted ###
       if len(titles) == 0:
-        if self.creative:
+        if self.use_arbitrary_input_response and self.creative:
           # parse input and see if we can generate some arbitrary response
           return self.generate_arbitrary_response(line)
         else:
@@ -269,7 +279,7 @@ class Chatbot:
                   [('\"{}\"'.format(t)) for t in titles], 'and')
                 ) +
                 " titles with \"\" or talking only about a single movie.")
-        elif self.creative:
+        elif self.use_multiple_movies_sentiment_extraction and self.creative:
             return self.process_multi_titles(line)
         else:
             return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
@@ -416,7 +426,7 @@ class Chatbot:
       spell_corrected = False
 
       # Try enabling spell correction if no movies were found.
-      if self.creative and len (movie_index) == 0:
+      if self.use_title_spell_correction and self.creative and len (movie_index) == 0:
         movie_index = self.find_movies_closest_to_title(title)
         spell_corrected = True
 
@@ -504,7 +514,7 @@ class Chatbot:
         titles.append(title)
 
       self.quoteless_title_extraction = False
-      if self.creative and len(titles) == 0:
+      if self.use_quoteless_caseless_extraction and self.creative and len(titles) == 0:
         # Attempt to extract titles without explicit quotation marks
         for elem in self.titles:
           title, year, _ = elem

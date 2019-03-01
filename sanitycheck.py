@@ -143,10 +143,6 @@ def test_extract_titles_creative():
         chatbot.extract_titles('I liked 10, things i hate about you.'),
         ["10"],
         "Incorrect output for extract_titles('I liked 10, things i hate about you.').",
-    ) and assertListEquals(
-        chatbot.extract_titles('I liked "rush hour".'),
-        ["10"],
-        "Incorrect output for extract_titles('I liked \"rush hour\".').",
     ):
         print('extract_titles() sanity check passed!')
     print()
