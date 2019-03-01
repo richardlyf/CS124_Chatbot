@@ -508,7 +508,10 @@ class Chatbot:
             if self.creative:
               # Handle differing capitalizations
               # If user inputs "scream", should find all movies containing "scream" but not "screams" / "screaming"
-              if lib.title_contains_words(movie_title, entry_title):
+              # Only if movie was found using quotes, otherwise just use lower case comparison to reduce overflowing matches
+              if lib.title_contains_words(movie_title, entry_title) and not self.quoteless_title_extraction:
+                  movies.append(i)
+              elif movie_title.lower() == entry_title.lower():
                   movies.append(i)
             else:
               if movie_title == entry_title:
@@ -615,7 +618,7 @@ class Chatbot:
 
       # Split text by sentence, then tokenize by conjuctions, movie titles, and other words
       for sentence in re.split(r'\? |! |\. ', text):
-        tks = lib.tokenize_conj_movie_other (sentence)
+        tks = lib.tokenize_conj_movie_other(sentence)
         tks.append((TKN_OTHER, '.'))
         tagged_tokens = tagged_tokens + tks
 
@@ -640,6 +643,14 @@ class Chatbot:
         # check if end of sentence / phrase ('but' is the only conj that signals end of phrase)
         if (tag == TKN_CONJ and token.lower() == 'but') or (tag == TKN_OTHER and token == '.'):
           sentiment = self.extract_sentiment(current_sentence)
+
+          print(current_sentence)
+          print(sentiment)
+          # If neither nor exists in the current sentence, its sentiment is inverted.
+          # Neither nor and only be checke at the end of sentence because neither usually appears before the movie title
+          # "I liked neither this nor that"
+          if "neither" in current_sentence.lower() and "nor" in current_sentence.lower():
+              sentiment *= -1
 
           # If current sentence seg has neutral sentiment and previous sentence seg
           # ended with a negation conjunction ('but')
