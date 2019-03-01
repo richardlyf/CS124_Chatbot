@@ -88,10 +88,41 @@ def extract_movies_using_indices(titles_obj, indices):
             movies.append(title)
     return movies
 
+# Extracts and returns the standardized alternate title, if one exists or None otherwise
+def extract_and_standardize_alt_title (title):
+    alt_pat = '^(?P<title>.*) \((?P<alt>[^\)]*)\)$'
+
+    e_matches = re.findall(alt_pat, title)
+    if (len(e_matches) != 1):
+        # no alternate title found
+        return (title, None)
+    else:
+        # successfully parsed alt title
+        assert (len(e_matches) == 1)
+
+        main_title = e_matches[0][0]
+        alt_title = e_matches[0][1]
+
+        if alt_title.find('a.k.a. ') == 0 and len(alt_title) > 7:
+            alt_title = alt_title[7:]
+
+        # Move the leading article in alt title if needed
+        article_pat = '^(?P<title>.*), (?P<leading_article>[A-Za-z]+)$'
+        e_matches = re.findall(article_pat, alt_title)
+        if len(e_matches) != 0:
+            # leading article detected at end of title
+            assert (len(e_matches) == 1)
+            alt_title = '{} {}'.format(e_matches[0][1], e_matches[0][0])
+
+        return (main_title, '({})'.format(alt_title))
+
 """
 Takes a list of [title, genres] lists and standardizes entries by extracting the
 year and moving the leading article to the front. For example, a single element
 conversion: ["House, The (2018)", <genres>] -> ["The House", 2018, <genres>]
+
+["Quest for Fire (Guerre du feu, La) (1981)", <genres>] ->
+["Quest for Fire (La Guerre du feu)", 1981, <genres>]
 """
 def standardize_titles(titles):
     standardized_titles = []
@@ -105,8 +136,24 @@ def standardize_titles(titles):
         # Extract year from title
         title, year = extract_year_from_title(title)
 
+        # Iteratively standardize alternative titles
+        alt_titles = []
+        main_title = title
+        while True:
+            main_title, alt_title = extract_and_standardize_alt_title(main_title)
+            if alt_title is None:
+                # No alt title detected
+                break
+            else:
+                alt_titles.append(alt_title)
+
         # Standardize leading article position (move to front)
-        title = move_leading_article_to_front(title)
+        main_title = move_leading_article_to_front(main_title)
+
+        if len(alt_titles) > 0:
+            title = main_title + ' ' + ' '.join(alt_titles)
+        else:
+            title = main_title
 
         standardized_titles.append([title, year, genres])
 
@@ -161,6 +208,10 @@ def title_contains_words(substring, movie_title):
     substring = substring.lower()
     if not substring[-1].isalnum():
         substring = substring[:-1]
+
+    # Remove potential punctuation at the beginning
+    if not substring[0].isalnum():
+        substring = substring[1:]
 
     substring_pos = movie_title.lower().find(substring)
 
