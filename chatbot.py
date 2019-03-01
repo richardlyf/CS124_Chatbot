@@ -5,11 +5,11 @@
 
 # Creative feature flags
 # Set to true to enable to false to disable the corresponding feature
-use_quoteless_caseless_extraction = True
-use_title_spell_correction = True
-use_multiple_movies_sentiment_extraction = True
-use_arbitrary_input_response = True
-disambiguate_extracted_titles = True
+use_quoteless_caseless_extraction = False
+use_title_spell_correction = False
+use_multiple_movies_sentiment_extraction = False
+use_arbitrary_input_response = False
+disambiguate_extracted_titles = False
 
 import movielens
 
@@ -1014,6 +1014,11 @@ class Chatbot:
       - Disambiguation (part 1)
         Flag: <TODO @Richard>
 
+      - Understanding references to things said previously
+        Flag: <NO FLAG>, specifiying the '--creative' flag enables this feature
+        E.g. User: 'I saw "Avatar"', Marvin: 'What did you think of "Avatar"?',
+        User: 'I liked it.', Marvin: 'You liked "Avatar"'.
+
       - Responding to arbitrary input
         Flag: use_arbitrary_input_response
 
@@ -1026,6 +1031,9 @@ class Chatbot:
       - Communicating sentiments and movies extracted to the user given
         multiple-movie input
         Flag: use_multiple_movies_sentiment_extraction
+
+      - Speaking very fluently
+        Am I your best friend now? \\(^-^)/
       """
 
 
