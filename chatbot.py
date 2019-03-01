@@ -197,12 +197,6 @@ class Chatbot:
       :param line: a user-supplied line of text
       :returns: a string containing the chatbot's response to the user input
       """
-      #############################################################################
-      # TODO: Implement the extraction and transformation in this method,         #
-      # possibly calling other functions. Although modular code is not graded,    #
-      # it is highly recommended.                                                 #
-      #############################################################################
-
       # Handle spell correction response first.
       if self.creative and self.spell_correction_answer:
         self.spell_correction_answer = False
@@ -220,7 +214,7 @@ class Chatbot:
 
       # Handle user response to disambiguate which movie the user is refering to
       # User is allowed to answer No and this part will not execute
-      elif self.creative and self.clarify_answer and use_quoteless_caseless_extraction:
+      elif self.creative and self.clarify_answer and disambiguate_extracted_titles:
           if line[:2].lower() != 'no':
               # Disambiguate if the user didn't say no
               self.clarify_movie_indices = self.disambiguate(line, self.clarify_movie_indices)
@@ -487,7 +481,7 @@ class Chatbot:
       # More than one movie is found
       elif len(movies) > 1:
 
-        if use_quoteless_caseless_extraction:
+        if disambiguate_extracted_titles:
           # Prepare for clarifications from user
           self.clarify_answer = True
           self.clarify_movie_indices = movie_index
@@ -846,6 +840,13 @@ class Chatbot:
       # Should be set to True once the list shrinks
       clarified = False
 
+      ### Use direct comparison ###
+      if not clarified:
+          potential_candidates = [candidates[i] for i in range(len(candidates)) if clarification.strip() == movie_list[i].lower()]
+          if len(potential_candidates) < len(candidates) and potential_candidates != []:
+              candidates = potential_candidates
+              clarified = True
+
       ### Clarification by year ###
       # Assume the user enters a sentence that contains exactly one year number which clarifies
       year_pat = r'\b\(?([12][0-9]{3})\)?\b'
@@ -866,10 +867,6 @@ class Chatbot:
           if len(potential_candidates) < len(candidates) and potential_candidates != []:
               candidates = potential_candidates
               clarified = True
-
-      # TODO the following strategy may be unnecessary
-      # If the previous methods do not emliminate any options
-      # Reextract movies from the clarification and check if there are any intersections
 
       return candidates
 
