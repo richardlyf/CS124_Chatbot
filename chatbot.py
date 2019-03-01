@@ -997,7 +997,7 @@ class Chatbot:
 
       To enable each creative feature while chatting with me, set its
       corresponding global flag in \"chatbot.py\" (line 6) to True. Likewise,
-      to disable a creative feature, set its corresponding flag to False. 
+      to disable a creative feature, set its corresponding flag to False.
       Note that the '--creative' flag must also be specified in order for any
       creative feature to take effect.
 
@@ -1012,7 +1012,7 @@ class Chatbot:
         Flag: <NO FLAG>, specifiying the '--creative' flag enables this feature
 
       - Disambiguation (part 1)
-        Flag: <TODO @Richard>
+        Flag: disambiguate_extracted_titles
 
       - Understanding references to things said previously
         Flag: <NO FLAG>, specifiying the '--creative' flag enables this feature
@@ -1026,7 +1026,10 @@ class Chatbot:
         Flag: use_title_spell_correction
 
       - Dialogue for disambiguation
-        Flag: <TODO @Richard>
+        Flag: disambiguate_extracted_titles
+        E.g. User: 'I liked "Harry Potter"', Marvin: 'Ahh, I have found more than one movie called "Harry Potter" [list of movies]
+        Can you clarify which one you are refering to? You don't have to though. Just say No.', User: 'Chamber of Secrets',
+        Marvin: 'You liked Harry Potter and the Chamber of Secrets (2002)'
 
       - Communicating sentiments and movies extracted to the user given
         multiple-movie input
