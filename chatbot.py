@@ -288,6 +288,7 @@ class Chatbot:
 
     def generate_arbitrary_response(self, line):
       """
+      Used by add_movie_ratings when no movie titles are found
       Generates some arbitrary response depending on user input
       """
       return "<TODO: GENERATE SOME ARBITRARY RESPONSE>"
@@ -629,7 +630,7 @@ class Chatbot:
 
       return movie_sentiments
 
-    def find_movies_closest_to_title(self, title, max_distance=3):
+    def find_movies_closest_to_title(self, title, max_distance=EDIT_DIST):
       """Creative Feature: Given a potentially misspelled movie title,
       return a list of the movies in the dataset whose titles have the least edit distance
       from the provided title, and with edit distance at most max_distance.

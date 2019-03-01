@@ -222,7 +222,10 @@ def title_contains_words(substring, movie_title):
         return False
     substring_pos = movie_title.lower().find(substring.lower())
     substring_end_pos = substring_pos + len(substring)
-    if substring_pos != -1 and (substring_end_pos == len(movie_title) or not movie_title[substring_end_pos].isalpha()):
+    # If a substring match exists, and the match is at the end of the title or the title character right after the match is not a letter, return True
+    # A similar check is applied to the begining of the match so there are no extra prefix letters
+    if substring_pos != -1 and (substring_end_pos == len(movie_title) or not movie_title[substring_end_pos].isalpha()) \
+            and (substring_pos == 0 or not movie_title[substring_pos - 1].isalpha()):
         return True
 
     return False
