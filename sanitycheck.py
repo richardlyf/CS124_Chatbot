@@ -151,26 +151,11 @@ def test_extract_titles_creative():
         print('extract_titles() sanity check passed!')
     print()
 
-    """ """ 
+    """ """
 
 def test_find_movies_by_title():
     print("Testing find_movies_by_title() functionality...")
     chatbot = Chatbot(False)
-
-    """
-    chatbot.find_movies_by_title("ABC (2019)")
-    chatbot.find_movies_by_title("ABC(2019)")
-    chatbot.find_movies_by_title("ABC (123)")
-    chatbot.find_movies_by_title("ABC (20123)")
-    chatbot.find_movies_by_title("ABC (201A)")
-    chatbot.find_movies_by_title("ABC1234")
-    chatbot.find_movies_by_title("ABC 2012")
-    print (chatbot.titles[217])
-    chatbot.find_movies_by_title("An ABC (2019)")
-    chatbot.find_movies_by_title("ABC THE (2019)")
-    chatbot.find_movies_by_title("The Ant")
-    return
-    """
 
     if assertListEquals(
         chatbot.find_movies_by_title("The American President"),
@@ -214,6 +199,21 @@ def test_find_movies_by_title_creative():
         chatbot.find_movies_by_title("Titanic (1997)"),
         [1359],
         "Incorrect output for find_movies_by_title('Titanic (1997)').",
+    ) and assertListEquals(
+        chatbot.find_movies_by_title("Business of"),
+        [6924, 3849],
+        "Incorrect output for find_movies_by_title('Business of')",
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.find_movies_by_title("SCREAM"),
+        [1142, 1357, 2629, 546],
+        "Incorrect output for find_movies_by_title('SCREAM')",
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.find_movies_by_title("Percy Jackson"),
+        [7463, 8377],
+        "Incorrect output for find_movies_by_title('Percy Jackson')",
+        orderMatters=False
     ):
         print('find_movies_by_title() sanity check passed!')
     print()
@@ -281,7 +281,6 @@ def test_find_movies_closest_to_title():
     chatbot = Chatbot(True)
 
     misspelled = "Sleeping Beaty"
-    """
     if assertListEquals(
         chatbot.find_movies_closest_to_title(misspelled, max_distance=3),
         [1656],
@@ -289,8 +288,6 @@ def test_find_movies_closest_to_title():
         orderMatters=False
     ):
         print('find_movies_closest_to_title() sanity check passed!')
-    """
-    print("Skipping...")
     print()
     return True
 
@@ -298,12 +295,29 @@ def test_disambiguate():
     print("Testing disambiguate() functionality...")
     chatbot = Chatbot(True)
 
-    clarification = "1997"
-    candidates = [1359, 2716]
+    clarification1 = "1997"
+    candidates1 = [1359, 2716]
+
+    clarification2 = "2"
+    candidates2 = [1142, 1357, 2629, 546]
+
+    clarification3 = "sorcerer's stone"
+    candidates3 = [3812, 4325, 5399, 6294, 6735, 7274, 7670, 7842]
+
     if assertListEquals(
-        chatbot.disambiguate(clarification, candidates),
+        chatbot.disambiguate(clarification1, candidates1),
         [1359],
-        "Incorrect output for disambiguate('{}', {})".format(clarification, candidates),
+        "Incorrect output for disambiguate('{}', {})".format(clarification1, candidates1),
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.disambiguate(clarification2, candidates2),
+        [1357],
+        "Incorrect output for disambiguate('{}', {})".format(clarification2, candidates2),
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.disambiguate(clarification3, candidates3),
+        [3812],
+        "Incorrect output for disambiguate('{}', {})".format(clarification3, candidates3),
         orderMatters=False
     ):
         print('disambiguate() sanity check passed!')

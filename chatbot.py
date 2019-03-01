@@ -13,6 +13,9 @@ from deps import lib
 # Edit distance allowed for a movie title match
 EDIT_DIST = 3
 
+# Number of recommendations Marvin will suggest
+NUM_REC = 5
+
 # Corpuses for different responses
 # Opening greeting
 greeting_corp = [
@@ -22,12 +25,12 @@ greeting_corp = [
 
 # Movie title successfully extracted but is invalid
 invalid_movie_corp = [
-"Humm... Sorry I don't think I know about this movie that you mentioned. Can you try another one?"
+"Humm... Sorry I don't think I know about this movie that you mentioned. Please try another one."
 ]
 
 multi_movie_corp = [
 """Ahh, I have found more than one movie called \"{}\". There is {}.
-Can you repeat your preference with a more specific title?""",
+Please repeat your preference with a more specific title.""",
 ]
 
 spell_corrected_corp_single = [
@@ -35,17 +38,17 @@ spell_corrected_corp_single = [
 ]
 
 spell_corrected_corp_single_error = [
-"""Sorry, I couldn't under stand your answer. Please answer with either \'yes\' or \'no\':
+"""Sorry, I couldn't understand your answer. Please answer with either \'yes\' or \'no\':
 {}"""
 ]
 
 spell_corrected_corp_single_no = [
-"""OK, so you weren't talking about {} after all. 
+"""OK, so you weren't talking about {} after all.
 In that case, please check your spelling and repeat your preference, or try talking about another movie!"""
 ]
 
 spell_corrected_corp = [
-"""I'm sorry, I couldn't find a movie titled \"{}\". Did you happen to mean {}?
+"""I'm sorry, I couldn't find the movies titled \"{}\". Did you happen to mean {}?
 Please check your spelling and repeat your preference, or try talking about another movie!"""
 ]
 
@@ -56,7 +59,7 @@ pos_movie_corp = [
 ]
 
 neutral_movie_corp = [
-"I'm not sure if you liked {} or not. Can you tell me more?"
+"I'm not sure if you liked {} or not. Can you tell me more? Your next response can help me decide.\nYou can also choose to not answer by saying \"No\". "
 ]
 
 neg_movie_corp = [
@@ -98,22 +101,29 @@ class Chatbot:
 
       # Vector that keeps track of user movie preference
       self.user_ratings = np.zeros(len(self.titles))
-      
+
       # Flag that user can update by talking to the chatbot. Set to false when the user asks for a recommendation
       # self.add_review = True
-      
+
       # Becomes true once the user's made 5 recommendations.
       self.can_recommend = False
 
       # Flag for if quoteless movie title extraction was performed
       self.quoteless_title_extraction = False
 
-      # Used for remembering movie title spell correction state.
+      # Used when Marvin asks if the user wants to accept the spell correction or not
+      # Variables for remembering info about the movie that's being spell corrected.
       self.spell_correction_answer = False
       self.spell_correction_prompt = ''
       self.spell_correction_movie_index = 0
       self.spell_correction_movie_title = ''
       self.spell_correction_review = ''
+
+      # Used when Marvin cannot determine if a review is pos or neg and asks for more information
+      # Variables for remembering info about the movie that's going to have its preference updated
+      self.preference_update_answer = False
+      self.preference_update_movie_index = 0
+      self.preference_update_movie_title = 0
 
     #############################################################################
     # 1. WARM UP REPL                                                           #
@@ -158,17 +168,27 @@ class Chatbot:
       # possibly calling other functions. Although modular code is not graded,    #
       # it is highly recommended.                                                 #
       #############################################################################
-      
+
       # Handle spell correction response first.
       if self.creative and self.spell_correction_answer:
         self.spell_correction_answer = False
         response = self.process_spell_correction_response(line)
 
+      # Handle user response to update movie preference first.
+      # User is allowed to answer No and this part of the code will not execute
+      elif self.creative and self.preference_update_answer:
+          if line[:2].lower() != 'no':
+              senti = self.extract_sentiment(line)
+              response = self.process_movie_preference(self.preference_update_movie_index, self.preference_update_movie_title, review=None, usr_senti=senti)
+          else:
+              response = "Ok, that's fine. Let's move on. Tell me something else."
+          self.preference_update_answer = False
+
       # Check if a user wants a recommendation:
       elif self.can_recommend and "recommend" in line.lower():
         # Recommend movie(s).
         response = "Here are the top 5 recommendations I have for you: \n"
-        rec_indices = self.recommend(self.user_ratings, self.ratings, k=5, creative=self.creative)
+        rec_indices = self.recommend(self.user_ratings, self.ratings, k=NUM_REC, creative=self.creative)
         recs = lib.extract_movies_using_indices(self.titles, rec_indices)
         response += ', '.join(recs) + '\n Feel free to add more reviews so I can make better recommendations.'
 
@@ -194,8 +214,10 @@ class Chatbot:
 
       return response
 
-    # Handles the user's response to a movie-title spelling correction confirmation.
     def process_spell_correction_response(self, line):
+      """
+      Handles the user's response to a movie-title spelling correction confirmation.
+      """
       # Check if responding to a previous spell correction question.
       has_y = 'y' in line.lower()
       has_n = 'n' in line.lower()
@@ -203,8 +225,8 @@ class Chatbot:
       if has_y and not has_n:
         # Yes
         return self.process_movie_preference (
-          self.spell_correction_movie_index, 
-          self.spell_correction_movie_title, 
+          self.spell_correction_movie_index,
+          self.spell_correction_movie_title,
           self.spell_correction_review
         )
       elif has_n and not has_y:
@@ -230,6 +252,7 @@ class Chatbot:
       # Extract titles from user input.
       titles = self.extract_titles(line)
 
+      ### No titles are extracted ###
       if len(titles) == 0:
         if self.creative:
           # parse input and see if we can generate some arbitrary response
@@ -237,61 +260,25 @@ class Chatbot:
         else:
           return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
 
-      # At least one title extracted
-      if self.quoteless_title_extraction:
-        if len(titles) > 1:
-          return ("Sorry, I didn't quite catch that. " +
-            "I can only process a single quoteless title currently, and I think you might've mentioned " +
-            "{}.\nPlease try encolosing your movie".format(lib.concatenate_titles(
-              [('\"{}\"'.format(t)) for t in titles], 'and')
-            ) +
-            " titles with \"\" or talking only about a single movie.")
-      else:
-        if len(titles) != 1:
-          if self.creative:
+      ### More than one title is extracted ###
+      elif len(titles) > 1:
+        if self.quoteless_title_extraction:
+            return ("Sorry, I didn't quite catch that. " +
+                "I can only process a single quoteless title currently, and I think you might've mentioned " +
+                "{}.\nPlease try encolosing your movie".format(lib.concatenate_titles(
+                  [('\"{}\"'.format(t)) for t in titles], 'and')
+                ) +
+                " titles with \"\" or talking only about a single movie.")
+        elif self.creative:
             return self.process_multi_titles(line)
-          else:
-            return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
-          
-      title = titles[0]
-
-      # Search for a matching movie.
-      movie_index = self.find_movies_by_title(title)
-      spell_corrected = False
-
-      # Try enabling spell correction if no movies were found.
-      if self.creative and len (movie_index) == 0:
-        movie_index = self.find_movies_closest_to_title(title)
-        spell_corrected = True
-
-      movies = [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
-
-      if len(movies) == 0:
-        return lib.getResponse(invalid_movie_corp)
-
-      elif len(movies) == 1:
-        if spell_corrected:
-          self.spell_correction_answer = True
-          self.spell_correction_prompt = lib.getResponse(
-            spell_corrected_corp_single).format(title, movies[0])
-          self.spell_correction_movie_index = movie_index[0]
-          self.spell_correction_movie_title = movies[0]
-          self.spell_correction_review = line
-
-          return self.spell_correction_prompt
-
-      elif len(movies) > 1:
-        # Build movies list with correct grammar. Final conjunction depends on case.
-        if spell_corrected:
-          formatted_movies = lib.concatenate_titles(movies, 'or')
-          return lib.getResponse(spell_corrected_corp).format(title, formatted_movies)
         else:
-          formatted_movies = lib.concatenate_titles(movies, 'and')
-          return lib.getResponse(multi_movie_corp).format(title, formatted_movies)
+            return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
 
-      return self.process_movie_preference(movie_index[0], movies[0], line)
-      
-    # Generates some arbitrary response depending on user input
+      ### Exactly one title extracted ###
+      else:
+        title = titles[0]
+        return self.process_single_title(title, line)
+
     def generate_arbitrary_response(self, line):
       """
       Generates some arbitrary response depending on user input
@@ -362,8 +349,11 @@ class Chatbot:
         return ("{} But why don't we try talking more about movies?".format(lib.getResponse(catchall_corp))
         + " After all, I am Marvin the Marvelous 'Movie' bot :)")
 
-    # Handles the case where the user supplies multiple movie titles.
     def process_multi_titles(self, line):
+      """
+      Used by add_movie_ratings when many movies titles are found
+      Handles the case where the user supplies multiple movie titles.
+      """
       movie_sentiments = self.extract_sentiment_for_movies(line)
       pos_titles = []
       neg_titles = []
@@ -381,6 +371,8 @@ class Chatbot:
           if sentiment < 0:
             neg_titles.append(title)
           elif sentiment == 0:
+            # TODO Currently does not support multiple movies preference update(if one is neutral)
+            self.preference_update_answer = False
             neutral_titles.append(title)
           else:
             pos_titles.append(title)
@@ -411,15 +403,59 @@ class Chatbot:
           + " {} ".format(lib.concatenate_titles(unprocessable_titles, 'or'))
           + "- Please check your spelling or try specifying the year,"
           + " e.g. \"Titanic (1997)\".")
-   
+
       return response
 
+    def process_single_title(self, title, line):
+      """
+      Used by add_movie_ratings when exactly one movie title is found
+      Handles the case where the user supplies multiple movie titles.
+      """
+      # Search for a matching movie.
+      movie_index = self.find_movies_by_title(title)
+      spell_corrected = False
 
-    """ Performs sentiment extraction on the user's review and updates the 
-    user_rating for the specified movie. Returns the bot's response to the
-    user as implicit confirmation.
-    """
+      # Try enabling spell correction if no movies were found.
+      if self.creative and len (movie_index) == 0:
+        movie_index = self.find_movies_closest_to_title(title)
+        spell_corrected = True
+
+      movies = [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
+
+      # No movies found
+      if len(movies) == 0:
+        return lib.getResponse(invalid_movie_corp)
+
+      # One movie is found with spell correction
+      elif len(movies) == 1 and spell_corrected:
+          self.spell_correction_answer = True
+          self.spell_correction_prompt = lib.getResponse(
+            spell_corrected_corp_single).format(title, movies[0])
+          self.spell_correction_movie_index = movie_index[0]
+          self.spell_correction_movie_title = movies[0]
+          self.spell_correction_review = line
+
+          return self.spell_correction_prompt
+
+      # More than one movie is found
+      elif len(movies) > 1:
+        # Build movies list with correct grammar. Final conjunction depends on case.
+        if spell_corrected:
+          formatted_movies = lib.concatenate_titles(movies, 'or')
+          return lib.getResponse(spell_corrected_corp).format(title, formatted_movies)
+        else:
+          formatted_movies = lib.concatenate_titles(movies, 'and')
+          return lib.getResponse(multi_movie_corp).format(title, formatted_movies)
+
+      # Exactly one movie is found
+      return self.process_movie_preference(movie_index[0], movies[0], line)
+
+
     def process_movie_preference (self, movie_index, movie_title, review, usr_senti=None):
+      """ Performs sentiment extraction on the user's review and updates the
+      user_rating for the specified movie. Returns the bot's response to the
+      user as implicit confirmation.
+      """
       if usr_senti is None:
         sentiment = self.extract_sentiment(review)
       else:
@@ -431,6 +467,9 @@ class Chatbot:
         return lib.getResponse(pos_movie_corp).format(movie_title)
 
       elif sentiment == 0:
+        self.preference_update_answer = True
+        self.preference_update_movie_title = movie_title
+        self.preference_update_movie_index = movie_index
         return lib.getResponse(neutral_movie_corp).format(movie_title)
 
       else:
@@ -542,7 +581,11 @@ class Chatbot:
             # No spelling correction
             if self.creative:
               # Handle differing capitalizations
-              if movie_title.lower() == entry_title.lower():
+              # If user inputs "scream", should find all movies containing "scream" but not "screams" / "screaming"
+              # Only if movie was found using quotes, otherwise just use lower case comparison to reduce overflowing matches
+              if lib.title_contains_words(movie_title, entry_title) and not self.quoteless_title_extraction:
+                  movies.append(i)
+              elif movie_title.lower() == entry_title.lower():
                   movies.append(i)
             else:
               if movie_title == entry_title:
@@ -649,7 +692,7 @@ class Chatbot:
 
       # Split text by sentence, then tokenize by conjuctions, movie titles, and other words
       for sentence in re.split(r'\? |! |\. ', text):
-        tks = lib.tokenize_conj_movie_other (sentence)
+        tks = lib.tokenize_conj_movie_other(sentence)
         tks.append((TKN_OTHER, '.'))
         tagged_tokens = tagged_tokens + tks
 
@@ -675,6 +718,14 @@ class Chatbot:
         if (tag == TKN_CONJ and token.lower() == 'but') or (tag == TKN_OTHER and token == '.'):
           sentiment = self.extract_sentiment(current_sentence)
 
+          print(current_sentence)
+          print(sentiment)
+          # If neither nor exists in the current sentence, its sentiment is inverted.
+          # Neither nor and only be checke at the end of sentence because neither usually appears before the movie title
+          # "I liked neither this nor that"
+          if "neither" in current_sentence.lower() and "nor" in current_sentence.lower():
+              sentiment *= -1
+
           # If current sentence seg has neutral sentiment and previous sentence seg
           # ended with a negation conjunction ('but')
           if (sentiment == 0) and (prev_neg_sentiment is not None):
@@ -696,7 +747,7 @@ class Chatbot:
 
       return movie_sentiments
 
-    def find_movies_closest_to_title(self, title, max_distance=3):
+    def find_movies_closest_to_title(self, title, max_distance=EDIT_DIST):
       """Creative Feature: Given a potentially misspelled movie title,
       return a list of the movies in the dataset whose titles have the least edit distance
       from the provided title, and with edit distance at most max_distance.
@@ -736,8 +787,39 @@ class Chatbot:
       :param candidates: a list of movie indices
       :returns: a list of indices corresponding to the movies identified by the clarification
       """
-      pass
+      clarification = clarification.lower()
 
+      # List of full movies names with years of all candidates
+      movie_list = lib.extract_movies_using_indices(self.titles, candidates)
+      # Should be set to True once the list shrinks
+      clarified = False
+
+      ### Clarification by year ###
+      # Assume the user enters a sentence that contains exactly one year number which clarifies
+      year_pat = r'\b\(?([12][0-9]{3})\)?\b'
+      year_matches = re.findall(year_pat, clarification)
+
+      if len(year_matches) == 1 and not clarified:
+          year = year_matches[0]
+
+          # Loops through each movie and for every movie that contains the year, store that movie's index in new candidates
+          # Now candidates should contain movie indices for movies that have the year somewhere in its title
+          candidates = [candidates[i] for i in range(len(candidates)) if lib.title_contains_words(year, movie_list[i])]
+          clarified = True
+
+      ### Clarification by name ###
+      # Assume the user enters an exact substring of the movie title. eg: Using "Scorcerer's Stone" to clarify "Harry Potter and the Scorcerer's Stone"
+      if not clarified:
+          potential_candidates = [candidates[i] for i in range(len(candidates)) if lib.title_contains_words(clarification.strip(), movie_list[i][:-6])] #-6 because we don't include the year of the movie
+          if len(potential_candidates) < len(candidates) and potential_candidates != []:
+              candidates = potential_candidates
+              clarified = True
+
+      # TODO the following strategy may be unnecessary
+      # If the previous methods do not emliminate any options
+      # Reextract movies from the clarification and check if there are any intersections
+
+      return candidates
 
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
