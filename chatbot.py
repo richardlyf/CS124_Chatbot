@@ -5,11 +5,11 @@
 
 # Creative feature flags
 # Set to true to enable to false to disable the corresponding feature
-use_quoteless_caseless_extraction = False
-use_title_spell_correction = False
-use_multiple_movies_sentiment_extraction = False
-use_arbitrary_input_response = False
-disambiguate_extracted_titles = False
+use_quoteless_caseless_extraction = True
+use_title_spell_correction = True
+use_multiple_movies_sentiment_extraction = True
+use_arbitrary_input_response = True
+disambiguate_extracted_titles = True
 
 import movielens
 
@@ -71,7 +71,7 @@ pos_movie_corp = [
 ]
 
 neutral_movie_corp = [
-"I'm not sure if you liked {} or not. Can you tell me more? Your next response can help me decide.\nYou can also choose to not answer by saying \"No\". "
+"I'm not sure if you liked {} or not. Can you tell me more? Your next response can help me decide.\nYou can also choose to not answer by saying No. "
 ]
 
 neg_movie_corp = [
@@ -93,7 +93,7 @@ catchall_corp = [
 
 # The prompt above needs to change depending on disambiguation
 if disambiguate_extracted_titles:
-    multi_movie_corp = [line + "Can you clarify which one you are refering to? You don't have to though. Just say 'No'."\
+    multi_movie_corp = [line + "Can you clarify which one you are refering to? You don't have to though. Just say No."\
             for line in multi_movie_corp]
 else:
     multi_movie_corp = [line + "Please repeat your preference with a more specific title."\
