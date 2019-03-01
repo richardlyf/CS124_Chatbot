@@ -143,6 +143,10 @@ def test_extract_titles_creative():
         chatbot.extract_titles('I liked 10, things i hate about you.'),
         ["10"],
         "Incorrect output for extract_titles('I liked 10, things i hate about you.').",
+    ) and assertListEquals(
+        chatbot.extract_titles('I liked "rush hour".'),
+        ["10"],
+        "Incorrect output for extract_titles('I liked \"rush hour\".').",
     ):
         print('extract_titles() sanity check passed!')
     print()
@@ -325,6 +329,25 @@ def test_recommend():
         print("recommend() sanity check passed!")
     print()
 
+def test_arbitrary_response():
+    print("Testing generate_arbitrary_response() functionality...")
+    chatbot = Chatbot(True)
+    
+    if assertEquals(
+        chatbot.generate_arbitrary_response('Can you tell me a story?'),
+        "I'm not sure, but I probably can't tell you a story.",
+        "Incorrect output for generate_arbitrary_response('Can you tell me a story?')"
+    ) and assertEquals(
+        chatbot.generate_arbitrary_response('Did you fart really loudly?'),
+        "I'm not sure, but I probably didn't fart really loudly.",
+        "Incorrect output for generate_arbitrary_response('Did you fart really loudly?')"
+    ) and assertEquals(
+        chatbot.generate_arbitrary_response('Who is the best actor?'),
+        "I don't know who the best actor is.",
+        "Incorrect output for generate_arbitrary_response('Who is the best actor?')"
+    ):
+        print('generate_arbitary_response() sanity check passed!')
+
 def test_process():
     print("Testing process() functionality...")
     chatbot = Chatbot(False)
@@ -356,7 +379,7 @@ def main():
     testing_creative = args.creative
 
     #test_extract_titles()
-    test_find_movies_by_title()
+    #test_find_movies_by_title()
     #test_extract_sentiment()
     #test_recommend()
     #test_binarize()
@@ -364,11 +387,12 @@ def main():
     #test_process()
 
     if testing_creative:
-        test_find_movies_by_title_creative()
+        #test_find_movies_by_title_creative()
         #test_find_movies_closest_to_title()
         #test_extract_sentiment_for_movies()
         #test_disambiguate()
         #test_extract_titles_creative()
+        test_arbitrary_response()
 
 if __name__ == '__main__':
     main()
