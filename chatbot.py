@@ -5,11 +5,11 @@
 
 # Creative feature flags
 # Set to true to enable to false to disable the corresponding feature
-use_quoteless_caseless_extraction = False
+use_quoteless_caseless_extraction = True
+disambiguate_extracted_titles = True
 use_title_spell_correction = False
 use_multiple_movies_sentiment_extraction = False
 use_arbitrary_input_response = False
-disambiguate_extracted_titles = False
 
 import movielens
 

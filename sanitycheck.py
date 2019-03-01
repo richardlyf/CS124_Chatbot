@@ -300,6 +300,15 @@ def test_disambiguate():
     clarification3 = "sorcerer's stone"
     candidates3 = [3812, 4325, 5399, 6294, 6735, 7274, 7670, 7842]
 
+    clarification4 = "that darn cat!"
+    candidates4 = [822, 1090, 1182, 1599]
+    # [822]
+
+    clarification5 = "That Darn Cat"
+    candidates5 = [822, 1090, 1182, 1599]
+    # [1182]
+
+
     if assertListEquals(
         chatbot.disambiguate(clarification1, candidates1),
         [1359],
@@ -314,6 +323,16 @@ def test_disambiguate():
         chatbot.disambiguate(clarification3, candidates3),
         [3812],
         "Incorrect output for disambiguate('{}', {})".format(clarification3, candidates3),
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.disambiguate(clarification4, candidates4),
+        [822],
+        "Incorrect output for disambiguate('{}', {})".format(clarification4, candidates4),
+        orderMatters=False
+    ) and assertListEquals(
+        chatbot.disambiguate(clarification5, candidates5),
+        [1182],
+        "Incorrect output for disambiguate('{}', {})".format(clarification5, candidates5),
         orderMatters=False
     ):
         print('disambiguate() sanity check passed!')
@@ -417,15 +436,15 @@ def main():
     #test_recommend()
     #test_binarize()
     #test_similarity()
-    test_process()
+    #test_process()
 
     if testing_creative:
-        test_find_movies_by_title_creative()
-        test_find_movies_closest_to_title()
-        test_extract_sentiment_for_movies()
+        #test_find_movies_by_title_creative()
+        #test_find_movies_closest_to_title()
+        #test_extract_sentiment_for_movies()
         test_disambiguate()
-        test_extract_titles_creative()
-        test_process_creative()
+        #test_extract_titles_creative()
+        #test_process_creative()
 
 if __name__ == '__main__':
     main()
