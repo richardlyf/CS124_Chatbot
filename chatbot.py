@@ -1008,6 +1008,9 @@ class Chatbot:
         (part 2)
         Flag: <NO FLAG>, specifiying the '--creative' flag enables this feature
 
+      - Alternate/foreign titles
+        Flag: <NO FLAG>, specifiying the '--creative' flag enables this feature
+
       - Disambiguation (part 1)
         Flag: disambiguate_extracted_titles
 
