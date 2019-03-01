@@ -30,7 +30,7 @@ invalid_movie_corp = [
 
 multi_movie_corp = [
 """Ahh, I have found more than one movie called \"{}\". There is {}.
-Please repeat your preference with a more specific title.""",
+Can you clarify which one you are refering to? You don't have to though. Just say 'No'.""",
 ]
 
 spell_corrected_corp_single = [
@@ -49,13 +49,14 @@ In that case, please check your spelling and repeat your preference, or try talk
 
 spell_corrected_corp = [
 """I'm sorry, I couldn't find the movies titled \"{}\". Did you happen to mean {}?
-Please check your spelling and repeat your preference, or try talking about another movie!"""
+It would be great if you can clarify. Or you can just answer no and we can move on to talking about other movies!"""
 ]
 
 pos_movie_corp = [
 "You liked {}, got it!",
 "Ok, so you enjoyed {}.",
-"{}, good choice!"
+"{}, good choice!",
+"Oh I remember liking {} too. Great minds think alike huh?"
 ]
 
 neutral_movie_corp = [
@@ -64,7 +65,8 @@ neutral_movie_corp = [
 
 neg_movie_corp = [
 "I see. You didn't like {}.",
-"{} is no good, noted."
+"{} is no good, noted.",
+"Yea I can't say I liked {} very much either."
 ]
 
 catchall_corp = [
@@ -125,6 +127,12 @@ class Chatbot:
       self.preference_update_movie_index = 0
       self.preference_update_movie_title = 0
 
+      # Used when Marvin finds multiple movies that match the description and needs to disambiguate
+      # Variables for remembering info about the movies that need clarification
+      self.clarify_answer = False
+      self.clarify_movie_indicies = []
+      self.clarify_review = ''
+
     #############################################################################
     # 1. WARM UP REPL                                                           #
     #############################################################################
@@ -184,13 +192,31 @@ class Chatbot:
               response = "Ok, that's fine. Let's move on. Tell me something else."
           self.preference_update_answer = False
 
+      # Handle user response to disambiguate which movie the user is refering to
+      # User is allowed to answer No and this part will not execute
+      elif self.creative and self.clarify_answer:
+          if line[:2].lower() != 'no':
+              # Disambiguate if the user didn't say no
+              self.clarify_movie_indices = self.disambiguate(line, self.clarify_movie_indices)
+              movies = lib.extract_movies_using_indices(self.titles, self.clarify_movie_indices)
+
+              # If we successfully identified one movie, add its review, otherwise keep asking for clarifications.
+              if len(self.clarify_movie_indices) == 1:
+                  response = self.process_movie_preference(self.clarify_movie_indices[0], movies[0], self.clarify_review)
+                  self.clarify_answer = False
+              else:
+                  response = 'Thank you for clarifying! However, I still need to decide between {}. \nHelp me out? It\'s ok to say no.'.format(', '.join(movies))
+          else:
+              response = "Alrighty. Forget about that movie. Tell me another one."
+              self.clarify_answer = False
+
       # Check if a user wants a recommendation:
       elif self.can_recommend and "recommend" in line.lower():
         # Recommend movie(s).
         response = "Here are the top 5 recommendations I have for you: \n"
         rec_indices = self.recommend(self.user_ratings, self.ratings, k=NUM_REC, creative=self.creative)
         recs = lib.extract_movies_using_indices(self.titles, rec_indices)
-        response += ', '.join(recs) + '\n Feel free to add more reviews so I can make better recommendations.'
+        response += ', '.join(recs) + '\nFeel free to add more reviews so I can make better recommendations.'
 
       elif "recommend" in line.lower():
         # Not enough information to recommend a movie.
@@ -326,13 +352,13 @@ class Chatbot:
         else:
           last_words_flipped_builder.append(tkn)
       last_words_flipped = ' '.join(last_words_flipped_builder)
-      
+
       if first_word.lower() in q_words and second_word.lower() in tobe_verbs:
         return "I don't know {} {} {}.".format(first_word.lower(), last_words_flipped, second_word.lower())
-      
+
       elif first_word.lower() == 'can' and second_word.lower() == 'you':
         return "Sorry, but I probably can't {}.".format(last_words_flipped)
-      
+
       elif first_word.lower() == 'did' and second_word.lower() == 'you':
         return "I'm not sure, but I probably didn't {}.".format(last_words_flipped)
 
@@ -344,7 +370,7 @@ class Chatbot:
 
       elif first_word.lower() in q_words or first_word.lower() in yn_q_words:
         return "I don't know, {}? The world is full of mysteries...".format(first_word.lower() + ' ' + second_word + ' ' + last_words)
-      
+
       else:
         return ("{} But why don't we try talking more about movies?".format(lib.getResponse(catchall_corp))
         + " After all, I am Marvin the Marvelous 'Movie' bot :)")
@@ -439,6 +465,11 @@ class Chatbot:
 
       # More than one movie is found
       elif len(movies) > 1:
+        # Prepare for clarifications from user
+        self.clarify_answer = True
+        self.clarify_movie_indices = movie_index
+        self.clarify_review = line
+
         # Build movies list with correct grammar. Final conjunction depends on case.
         if spell_corrected:
           formatted_movies = lib.concatenate_titles(movies, 'or')
