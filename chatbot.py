@@ -241,7 +241,7 @@ class Chatbot:
       # Extract titles from user input.
       titles = self.extract_titles(line)
 
-      # No titles are extracted
+      ### No titles are extracted ###
       if len(titles) == 0:
         if self.creative:
           # parse input and see if we can generate some arbitrary response
@@ -249,59 +249,24 @@ class Chatbot:
         else:
           return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
 
-      # At least one title extracted
-      if self.quoteless_title_extraction:
-        if len(titles) > 1:
-          return ("Sorry, I didn't quite catch that. " +
-            "I can only process a single quoteless title currently, and I think you might've mentioned " +
-            "{}.\nPlease try encolosing your movie".format(lib.concatenate_titles(
-              [('\"{}\"'.format(t)) for t in titles], 'and')
-            ) +
-            " titles with \"\" or talking only about a single movie.")
-      else:
-        if len(titles) != 1:
-          if self.creative:
+      ### More than one title is extracted ###
+      elif len(titles) > 1:
+        if self.quoteless_title_extraction:
+            return ("Sorry, I didn't quite catch that. " +
+                "I can only process a single quoteless title currently, and I think you might've mentioned " +
+                "{}.\nPlease try encolosing your movie".format(lib.concatenate_titles(
+                  [('\"{}\"'.format(t)) for t in titles], 'and')
+                ) +
+                " titles with \"\" or talking only about a single movie.")
+        elif self.creative:
             return self.process_multi_titles(line)
-          else:
+        else:
             return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
 
-      title = titles[0]
-
-      # Search for a matching movie.
-      movie_index = self.find_movies_by_title(title)
-      spell_corrected = False
-
-      # Try enabling spell correction if no movies were found.
-      if self.creative and len (movie_index) == 0:
-        movie_index = self.find_movies_closest_to_title(title)
-        spell_corrected = True
-
-      movies = [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
-
-      if len(movies) == 0:
-        return lib.getResponse(invalid_movie_corp)
-
-      elif len(movies) == 1:
-        if spell_corrected:
-          self.spell_correction_answer = True
-          self.spell_correction_prompt = lib.getResponse(
-            spell_corrected_corp_single).format(title, movies[0])
-          self.spell_correction_movie_index = movie_index[0]
-          self.spell_correction_movie_title = movies[0]
-          self.spell_correction_review = line
-
-          return self.spell_correction_prompt
-
-      elif len(movies) > 1:
-        # Build movies list with correct grammar. Final conjunction depends on case.
-        if spell_corrected:
-          formatted_movies = lib.concatenate_titles(movies, 'or')
-          return lib.getResponse(spell_corrected_corp).format(title, formatted_movies)
-        else:
-          formatted_movies = lib.concatenate_titles(movies, 'and')
-          return lib.getResponse(multi_movie_corp).format(title, formatted_movies)
-
-      return self.process_movie_preference(movie_index[0], movies[0], line)
+      ### Exactly one title extracted ###
+      else:
+        title = titles[0]
+        return self.process_single_title(title, line)
 
     def generate_arbitrary_response(self, line):
       """
@@ -312,6 +277,7 @@ class Chatbot:
 
     def process_multi_titles(self, line):
       """
+      Used by add_movie_ratings when many movies titles are found
       Handles the case where the user supplies multiple movie titles.
       """
       movie_sentiments = self.extract_sentiment_for_movies(line)
@@ -331,7 +297,7 @@ class Chatbot:
           if sentiment < 0:
             neg_titles.append(title)
           elif sentiment == 0:
-            # TODO Currently does not support multiple movies preference update
+            # TODO Currently does not support multiple movies preference update(if one is neutral)
             self.preference_update_answer = False
             neutral_titles.append(title)
           else:
@@ -365,6 +331,50 @@ class Chatbot:
           + " e.g. \"Titanic (1997)\".")
 
       return response
+
+    def process_single_title(self, title, line):
+      """
+      Used by add_movie_ratings when exactly one movie title is found
+      Handles the case where the user supplies multiple movie titles.
+      """
+      # Search for a matching movie.
+      movie_index = self.find_movies_by_title(title)
+      spell_corrected = False
+
+      # Try enabling spell correction if no movies were found.
+      if self.creative and len (movie_index) == 0:
+        movie_index = self.find_movies_closest_to_title(title)
+        spell_corrected = True
+
+      movies = [('\"' + m + '\"') for m in lib.extract_movies_using_indices(self.titles, movie_index)]
+
+      # No movies found
+      if len(movies) == 0:
+        return lib.getResponse(invalid_movie_corp)
+
+      # One movie is found with spell correction
+      elif len(movies) == 1 and spell_corrected:
+          self.spell_correction_answer = True
+          self.spell_correction_prompt = lib.getResponse(
+            spell_corrected_corp_single).format(title, movies[0])
+          self.spell_correction_movie_index = movie_index[0]
+          self.spell_correction_movie_title = movies[0]
+          self.spell_correction_review = line
+
+          return self.spell_correction_prompt
+
+      # More than one movie is found
+      elif len(movies) > 1:
+        # Build movies list with correct grammar. Final conjunction depends on case.
+        if spell_corrected:
+          formatted_movies = lib.concatenate_titles(movies, 'or')
+          return lib.getResponse(spell_corrected_corp).format(title, formatted_movies)
+        else:
+          formatted_movies = lib.concatenate_titles(movies, 'and')
+          return lib.getResponse(multi_movie_corp).format(title, formatted_movies)
+
+      # Exactly one movie is found
+      return self.process_movie_preference(movie_index[0], movies[0], line)
 
 
     def process_movie_preference (self, movie_index, movie_title, review, usr_senti=None):
