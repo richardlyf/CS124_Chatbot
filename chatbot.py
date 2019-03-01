@@ -2,6 +2,15 @@
 # v.1.0.3
 # Original Python code by Ignacio Cases (@cases)
 ######################################################################
+
+# Creative feature flags
+# Set to true to enable to false to disable the corresponding feature
+use_quoteless_caseless_extraction = False
+use_title_spell_correction = False
+use_multiple_movies_sentiment_extraction = False
+use_arbitrary_input_response = False
+disambiguate_extracted_titles = None # TODO
+
 import movielens
 
 import numpy as np
@@ -23,6 +32,11 @@ greeting_corp = [
 "Please tell me about movies you've watched."
 ]
 
+goodbye_corp = [
+"Thanks for chatting with me! Hope you have a nice day!",
+"Hope I was able to recommend some good movies! Bye!",
+"Come back for more movie recommendations anytime! Goodbye!"
+]
 # Movie title successfully extracted but is invalid
 invalid_movie_corp = [
 "Humm... Sorry I don't think I know about this movie that you mentioned. Please try another one."
@@ -77,6 +91,7 @@ catchall_corp = [
 "Okay.",
 "That's good to know.",
 "Is that so?",
+"Got it."
 ]
 
 
@@ -145,8 +160,7 @@ class Chatbot:
 
     def goodbye(self):
       """Return a message that the chatbot uses to bid farewell to the user."""
-
-      goodbye_message = "Have a nice day!"
+      goodbye_message = lib.getResponse(goodbye_corp)
 
       return goodbye_message
 
@@ -223,14 +237,6 @@ class Chatbot:
         return "You need to rate at least 5 movies before I can recommend anything. So what did you like or didn't like?"
 
       else:
-        # Add preference / review.
-        """
-        if self.creative:
-            response = self.add_single_movie_rating(line)
-            #response = self.add_multi_movies_rating(line)
-        else:
-            response = self.add_single_movie_rating(line)
-        """
         response = self.add_movie_ratings(line)
 
       # Check if a user can have a recommendation
@@ -280,7 +286,7 @@ class Chatbot:
 
       ### No titles are extracted ###
       if len(titles) == 0:
-        if self.creative:
+        if use_arbitrary_input_response and self.creative:
           # parse input and see if we can generate some arbitrary response
           return self.generate_arbitrary_response(line)
         else:
@@ -295,7 +301,7 @@ class Chatbot:
                   [('\"{}\"'.format(t)) for t in titles], 'and')
                 ) +
                 " titles with \"\" or talking only about a single movie.")
-        elif self.creative:
+        elif use_multiple_movies_sentiment_extraction and self.creative:
             return self.process_multi_titles(line)
         else:
             return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
@@ -371,6 +377,9 @@ class Chatbot:
       elif first_word.lower() in q_words or first_word.lower() in yn_q_words:
         return "I don't know, {}? The world is full of mysteries...".format(first_word.lower() + ' ' + second_word + ' ' + last_words)
 
+      elif 'thank' in line.lower():
+        return "You're welcome!"
+
       else:
         return ("{} But why don't we try talking more about movies?".format(lib.getResponse(catchall_corp))
         + " After all, I am Marvin the Marvelous 'Movie' bot :)")
@@ -442,7 +451,7 @@ class Chatbot:
       spell_corrected = False
 
       # Try enabling spell correction if no movies were found.
-      if self.creative and len (movie_index) == 0:
+      if use_title_spell_correction and self.creative and len (movie_index) == 0:
         movie_index = self.find_movies_closest_to_title(title)
         spell_corrected = True
 
@@ -535,7 +544,7 @@ class Chatbot:
         titles.append(title)
 
       self.quoteless_title_extraction = False
-      if self.creative and len(titles) == 0:
+      if use_quoteless_caseless_extraction and self.creative and len(titles) == 0:
         # Attempt to extract titles without explicit quotation marks
         for elem in self.titles:
           title, year, _ = elem
