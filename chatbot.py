@@ -165,6 +165,9 @@ class Chatbot:
       self.recommendations = []
       self.rec_index = 0
 
+      # Used to keep track of the sentiment classification of the last review
+      self.last_senti = 0
+
     #############################################################################
     # 1. WARM UP REPL                                                           #
     #############################################################################
@@ -696,7 +699,7 @@ class Chatbot:
       :returns: a numerical value for the sentiment of the text
       """
       # Naive implementation of just counting positive words vs negative words
-      negations = ['don\'t', 'not', 'never', 'none', 'nothing', 'hardly', 'didn\'t']
+      negations = ['don\'t', 'not', 'never', 'none', 'nothing', 'hardly', 'didn\'t', 'no']
       negation_scale = 1
 
       resets = ['but', 'however']
@@ -733,6 +736,18 @@ class Chatbot:
 
       if posCount != 0:
           posCount = posCount / abs(posCount)
+          # Only update last_senti if a another sentiment word is extracted
+          self.last_senti = posCount
+
+      # Try to utilize memory of the last review to make a decision about sentiment
+      elif self.creative and self.last_senti != 0:
+          posCount = self.last_senti
+          negations.append('but')
+          for neg_conj in negations:
+              if neg_conj in words:
+                  posCount *= -1
+                  break
+
       #print(posCount)
       return posCount
 
@@ -1041,6 +1056,8 @@ class Chatbot:
         Flag: <NO FLAG>, specifiying the '--creative' flag enables this feature
         E.g. User: 'I saw "Avatar"', Marvin: 'What did you think of "Avatar"?',
         User: 'I liked it.', Marvin: 'You liked "Avatar"'.
+        E.g. User: 'I liked "Avatar"', Marvin: 'You liked "Avatar!"', User: 'But
+        not "I, robot".', Marvin: 'I see, you didn't like "I, Robot".'
 
       - Responding to arbitrary input
         Flag: use_arbitrary_input_response
