@@ -382,6 +382,7 @@ class Chatbot:
 
       first_word = tokens[0]
       second_word = tokens[1]
+      third_word = tokens[2]
       last_words = ' '.join(tokens[2:])
 
       last_words_flipped_builder = []
@@ -392,7 +393,7 @@ class Chatbot:
           last_words_flipped_builder.append(tkn)
       last_words_flipped = ' '.join(last_words_flipped_builder)
 
-      if first_word.lower() in q_words and second_word.lower() in tobe_verbs:
+      if first_word.lower() in q_words and second_word.lower() in tobe_verbs and third_word.lower() != 'you':
         return "I don't know {} {} {}.".format(first_word.lower(), last_words_flipped, second_word.lower())
 
       elif first_word.lower() == 'can' and second_word.lower() == 'you':
