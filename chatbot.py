@@ -9,7 +9,7 @@ use_quoteless_caseless_extraction = False
 use_title_spell_correction = False
 use_multiple_movies_sentiment_extraction = False
 use_arbitrary_input_response = False
-disambiguate_extracted_titles = None # TODO
+disambiguate_extracted_titles = False
 
 import movielens
 
@@ -43,27 +43,24 @@ invalid_movie_corp = [
 ]
 
 multi_movie_corp = [
-"""Ahh, I have found more than one movie called \"{}\". There is {}.
-Can you clarify which one you are refering to? You don't have to though. Just say 'No'.""",
+"Ahh, I have found more than one movie called \"{}\". There is {}.\n"
 ]
 
 spell_corrected_corp_single = [
-"""I'm sorry, I couldn't find a movie titled \"{}\". Did you happen to mean {}?"""
+"I'm sorry, I couldn't find a movie titled \"{}\". Did you happen to mean {}?"
 ]
 
 spell_corrected_corp_single_error = [
-"""Sorry, I couldn't understand your answer. Please answer with either \'yes\' or \'no\':
-{}"""
+"Sorry, I couldn't understand your answer. Please answer with either \'yes\' or \'no\': {}"
 ]
 
 spell_corrected_corp_single_no = [
-"""OK, so you weren't talking about {} after all.
-In that case, please check your spelling and repeat your preference, or try talking about another movie!"""
+"OK, so you weren't talking about {} after all. \
+In that case, please check your spelling and repeat your preference, or try talking about another movie!"
 ]
 
 spell_corrected_corp = [
-"""I'm sorry, I couldn't find the movies titled \"{}\". Did you happen to mean {}?
-It would be great if you can clarify. Or you can just answer no and we can move on to talking about other movies!"""
+"I'm sorry, I couldn't find the movies titled \"{}\". Did you happen to mean {}?\n"
 ]
 
 pos_movie_corp = [
@@ -93,6 +90,21 @@ catchall_corp = [
 "Is that so?",
 "Got it."
 ]
+
+# The prompt above needs to change depending on disambiguation
+if disambiguate_extracted_titles:
+    multi_movie_corp = [line + "Can you clarify which one you are refering to? You don't have to though. Just say 'No'."\
+            for line in multi_movie_corp]
+else:
+    multi_movie_corp = [line + "Please repeat your preference with a more specific title."\
+            for line in multi_movie_corp]
+
+if disambiguate_extracted_titles:
+    spell_corrected_corp = [line + "It would be great if you can clarify. Or you can just answer no and we can move on to talking about other movies!"\
+            for line in spell_corrected_corp]
+else:
+    spell_corrected_corp = [line + "Please check your spelling and repeat your preference, or try talking about another movie!"\
+            for line in spell_corrected_corp]
 
 
 class Chatbot:
@@ -208,7 +220,7 @@ class Chatbot:
 
       # Handle user response to disambiguate which movie the user is refering to
       # User is allowed to answer No and this part will not execute
-      elif self.creative and self.clarify_answer:
+      elif self.creative and self.clarify_answer and use_quoteless_caseless_extraction:
           if line[:2].lower() != 'no':
               # Disambiguate if the user didn't say no
               self.clarify_movie_indices = self.disambiguate(line, self.clarify_movie_indices)
@@ -474,10 +486,12 @@ class Chatbot:
 
       # More than one movie is found
       elif len(movies) > 1:
-        # Prepare for clarifications from user
-        self.clarify_answer = True
-        self.clarify_movie_indices = movie_index
-        self.clarify_review = line
+
+        if use_quoteless_caseless_extraction:
+          # Prepare for clarifications from user
+          self.clarify_answer = True
+          self.clarify_movie_indices = movie_index
+          self.clarify_review = line
 
         # Build movies list with correct grammar. Final conjunction depends on case.
         if spell_corrected:
