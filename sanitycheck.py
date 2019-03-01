@@ -350,16 +350,39 @@ def test_process():
     '"Titanic (1997)" I liked',
     '"Titanic (1997)" I disliked',
     '"Avatar" I disliked',
-    '"Blade runner" I enjoyed',
-    '"the notebook" was boring at first but then I think I liked it',
-    '"scream" was bad',
-    'I loved "10 things I hate about you"',
+    '"Blade Runner" I enjoyed',
+    '"The Notebook" was boring at first but then I think I liked it',
+    '"Scream" was bad',
+    'I loved "10 Things I Hate About You"',
     'can you recommend me a movie?'
     ]
 
+    print("Testing for simple input")
     for line in user_input:
         print("User: " + line)
         print("Marvin: " + chatbot.process(line))
+    print("---------------")
+
+def test_process_creative():
+    print("Testing process() functionality...")
+    chatbot = Chatbot(True)
+
+    user_input = [
+    'I like both "avatar" and "ted 2"',
+    'I hated both "avatar" and "ted 2"',
+    'I liked "avatar" and I enjoyed "ted 2" as well',
+    'I liked "avatar" but I think "ted 2" is really bad',
+    'I liked neither "avatar" nor "ted 2"',
+    '"avatar" and "ted 2", I liked neither of them',
+    'I didn\'t like either "avatar" or "ted 2"',
+    'I think "avatar" was good at first but then it got boring. I think "ted 2" was lame at first but then it got worse'
+    ]
+
+    print("Testing for multiple movies")
+    for line in user_input:
+        print("User: " + line)
+        print("Marvin: " + chatbot.process(line))
+    print("---------------")
 
 def main():
     parser = argparse.ArgumentParser(description='Sanity checks the chatbot. If no arguments are passed, all checks are run; you can use the arguments below to test specific parts of the functionality.')
@@ -369,13 +392,13 @@ def main():
     args = parser.parse_args()
     testing_creative = args.creative
 
-    test_extract_titles()
-    test_find_movies_by_title()
-    test_extract_sentiment()
-    test_recommend()
-    test_binarize()
-    test_similarity()
-    #test_process()
+    #test_extract_titles()
+    #test_find_movies_by_title()
+    #test_extract_sentiment()
+    #test_recommend()
+    #test_binarize()
+    #test_similarity()
+    test_process()
 
     if testing_creative:
         test_find_movies_by_title_creative()
@@ -383,6 +406,7 @@ def main():
         test_extract_sentiment_for_movies()
         test_disambiguate()
         test_extract_titles_creative()
+        test_process_creative()
 
 if __name__ == '__main__':
     main()

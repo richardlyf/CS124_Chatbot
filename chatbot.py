@@ -644,12 +644,10 @@ class Chatbot:
         if (tag == TKN_CONJ and token.lower() == 'but') or (tag == TKN_OTHER and token == '.'):
           sentiment = self.extract_sentiment(current_sentence)
 
-          print(current_sentence)
-          print(sentiment)
           # If neither nor exists in the current sentence, its sentiment is inverted.
           # Neither nor and only be checke at the end of sentence because neither usually appears before the movie title
           # "I liked neither this nor that"
-          if "neither" in current_sentence.lower() and "nor" in current_sentence.lower():
+          if "neither" in current_sentence.lower():
               sentiment *= -1
 
           # If current sentence seg has neutral sentiment and previous sentence seg
