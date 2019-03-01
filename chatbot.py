@@ -23,7 +23,7 @@ from deps import lib
 EDIT_DIST = 3
 
 # Number of recommendations Marvin will suggest
-NUM_REC = 5
+NUM_REC = 10
 
 # Corpuses for different responses
 # Opening greeting
@@ -160,6 +160,11 @@ class Chatbot:
       self.clarify_movie_indicies = []
       self.clarify_review = ''
 
+      # Used to keep track of recommendations
+      self.rec_answer = False
+      self.recommendations = []
+      self.rec_index = 0
+
     #############################################################################
     # 1. WARM UP REPL                                                           #
     #############################################################################
@@ -230,13 +235,31 @@ class Chatbot:
               response = "Alrighty. Forget about that movie. Tell me another one."
               self.clarify_answer = False
 
+      # Hanldes when the user wants another recommendation
+      elif self.rec_answer:
+        if 'yes' in line.lower():
+            if self.rec_index >= NUM_REC:
+                response = "Welp, I already gave you {} recommendations and now I'm out. Tell me more about movies so I can continue to recommend.".format(NUM_REC)
+                self.rec_answer = False
+            else:
+                response = "May I recommend {}.".format(self.recommendations[self.rec_index]) + "\nDo you want another recommendation?"
+                self.rec_index += 1
+        elif 'no' in line.lower():
+            response = "Ok, moving on. Feel free to add more reviews so I can make better recommendations."
+            self.rec_answer = False
+        else:
+            response = "Humm...so is that yes or no?"
+
       # Check if a user wants a recommendation:
       elif self.can_recommend and "recommend" in line.lower():
         # Recommend movie(s).
-        response = "Here are the top 5 recommendations I have for you: \n"
+        response = "I have found a recommendation for you: \n"
         rec_indices = self.recommend(self.user_ratings, self.ratings, k=NUM_REC, creative=self.creative)
         recs = lib.extract_movies_using_indices(self.titles, rec_indices)
-        response += ', '.join(recs) + '\nFeel free to add more reviews so I can make better recommendations.'
+        self.recommendations = recs
+        self.rec_index = 1
+        self.rec_answer = True
+        response += recs[0] + '\nIf you would like to hear another recommendation, say yes, otherwise say no.'
 
       elif "recommend" in line.lower():
         # Not enough information to recommend a movie.
