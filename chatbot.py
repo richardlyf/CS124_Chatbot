@@ -25,12 +25,12 @@ greeting_corp = [
 
 # Movie title successfully extracted but is invalid
 invalid_movie_corp = [
-"Humm... Sorry I don't think I know about this movie that you mentioned. Can you try another one?"
+"Humm... Sorry I don't think I know about this movie that you mentioned. Please try another one."
 ]
 
 multi_movie_corp = [
 """Ahh, I have found more than one movie called \"{}\". There is {}.
-Can you repeat your preference with a more specific title?""",
+Please repeat your preference with a more specific title.""",
 ]
 
 spell_corrected_corp_single = [
@@ -38,7 +38,7 @@ spell_corrected_corp_single = [
 ]
 
 spell_corrected_corp_single_error = [
-"""Sorry, I couldn't under stand your answer. Please answer with either \'yes\' or \'no\':
+"""Sorry, I couldn't understand your answer. Please answer with either \'yes\' or \'no\':
 {}"""
 ]
 
@@ -48,7 +48,7 @@ In that case, please check your spelling and repeat your preference, or try talk
 ]
 
 spell_corrected_corp = [
-"""I'm sorry, I couldn't find a movie titled \"{}\". Did you happen to mean {}?
+"""I'm sorry, I couldn't find the movies titled \"{}\". Did you happen to mean {}?
 Please check your spelling and repeat your preference, or try talking about another movie!"""
 ]
 
@@ -59,7 +59,7 @@ pos_movie_corp = [
 ]
 
 neutral_movie_corp = [
-"I'm not sure if you liked {} or not. Can you tell me more?"
+"I'm not sure if you liked {} or not. Can you tell me more? Your next response can help me decide."
 ]
 
 neg_movie_corp = [
@@ -100,12 +100,19 @@ class Chatbot:
       # Flag for if quoteless movie title extraction was performed
       self.quoteless_title_extraction = False
 
-      # Used for remembering movie title spell correction state.
+      # Used when Marvin asks if the user wants to accept the spell correction or not
+      # Variables for remembering info about the movie that's being spell corrected.
       self.spell_correction_answer = False
       self.spell_correction_prompt = ''
       self.spell_correction_movie_index = 0
       self.spell_correction_movie_title = ''
       self.spell_correction_review = ''
+
+      # Used when Marvin cannot determine if a review is pos or neg and asks for more information
+      # Variables for remembering info about the movie that's going to have its preference updated
+      self.preference_update_answer = False
+      self.preference_update_movie_index = 0
+      self.preference_update_movie_title = 0
 
     #############################################################################
     # 1. WARM UP REPL                                                           #
@@ -155,6 +162,12 @@ class Chatbot:
       if self.creative and self.spell_correction_answer:
         self.spell_correction_answer = False
         response = self.process_spell_correction_response(line)
+
+      # Handle user response to update movie preference first.
+      if self.creative and self.preference_update_answer:
+          self.preference_update_answer = False
+          senti = self.extract_sentiment(line)
+          response = self.process_movie_preference(self.preference_update_movie_index, self.preference_update_movie_title, review=None, usr_senti=senti)
 
       # Check if a user wants a recommendation:
       elif self.can_recommend and "recommend" in line.lower():
@@ -314,6 +327,8 @@ class Chatbot:
           if sentiment < 0:
             neg_titles.append(title)
           elif sentiment == 0:
+            # TODO Currently does not support multiple movies preference update
+            self.preference_update_answer = False
             neutral_titles.append(title)
           else:
             pos_titles.append(title)
@@ -364,6 +379,9 @@ class Chatbot:
         return lib.getResponse(pos_movie_corp).format(movie_title)
 
       elif sentiment == 0:
+        self.preference_update_answer = True
+        self.preference_update_movie_title = movie_title
+        self.preference_update_movie_index = movie_index
         return lib.getResponse(neutral_movie_corp).format(movie_title)
 
       else:
