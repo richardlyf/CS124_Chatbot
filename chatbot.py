@@ -69,7 +69,7 @@ Please check your spelling and repeat your preference, or try talking about anot
 pos_movie_corp = [
 "You liked {}, got it!",
 "Ok, so you enjoyed {}.",
-"{}, good choice!"
+"You liked {}? Good choice!"
 ]
 
 neutral_movie_corp = [
