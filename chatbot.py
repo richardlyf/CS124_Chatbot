@@ -32,6 +32,11 @@ greeting_corp = [
 "Please tell me about movies you've watched."
 ]
 
+goodbye_corp = [
+"Thanks for chatting with me! Hope you have a nice day!",
+"Hope I was able to recommend some good movies! Bye!",
+"Come back for more movie recommendations anytime! Goodbye!"
+]
 # Movie title successfully extracted but is invalid
 invalid_movie_corp = [
 "Humm... Sorry I don't think I know about this movie that you mentioned. Please try another one."
@@ -135,6 +140,7 @@ class Chatbot:
       self.preference_update_movie_index = 0
       self.preference_update_movie_title = 0
 
+
     #############################################################################
     # 1. WARM UP REPL                                                           #
     #############################################################################
@@ -147,8 +153,7 @@ class Chatbot:
 
     def goodbye(self):
       """Return a message that the chatbot uses to bid farewell to the user."""
-
-      goodbye_message = "Have a nice day!"
+      goodbye_message = lib.getResponse(goodbye_corp)
 
       return goodbye_message
 
@@ -207,14 +212,6 @@ class Chatbot:
         return "You need to rate at least 5 movies before I can recommend anything. So what did you like or didn't like?"
 
       else:
-        # Add preference / review.
-        """
-        if self.creative:
-            response = self.add_single_movie_rating(line)
-            #response = self.add_multi_movies_rating(line)
-        else:
-            response = self.add_single_movie_rating(line)
-        """
         response = self.add_movie_ratings(line)
 
       # Check if a user can have a recommendation
@@ -355,6 +352,9 @@ class Chatbot:
       elif first_word.lower() in q_words or first_word.lower() in yn_q_words:
         return "I don't know, {}? The world is full of mysteries...".format(first_word.lower() + ' ' + second_word + ' ' + last_words)
       
+      elif 'thank' in line.lower():
+        return "You're welcome!"
+
       else:
         return ("{} But why don't we try talking more about movies?".format(lib.getResponse(catchall_corp))
         + " After all, I am Marvin the Marvelous 'Movie' bot :)")
