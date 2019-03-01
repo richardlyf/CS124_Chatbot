@@ -1027,8 +1027,8 @@ class Chatbot:
 
       - Dialogue for disambiguation
         Flag: disambiguate_extracted_titles
-        E.g. User: 'I liked "Harry Potter"', Marvin: 'Ahh, I have found more than one movie called "Harry Potter" [list of movies]
-        Can you clarify which one you are refering to? You don't have to though. Just say No.', User: 'Chamber of Secrets',
+        E.g. User: 'I liked "Harry Potter"', Marvin: 'Which "Harry Potter" are
+        you refering to?', User: 'Chamber of Secrets',
         Marvin: 'You liked Harry Potter and the Chamber of Secrets (2002)'
 
       - Communicating sentiments and movies extracted to the user given
