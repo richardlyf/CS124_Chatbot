@@ -125,7 +125,7 @@ def tokenize_conj_movie_other (text):
     # or, nor, and -> same clause
     # but -> diff clause
     conjunctions = {'and', 'nor', 'but', 'or'}
-    
+
     TKN_TITLE = 0
     TKN_CONJ = 1
     TKN_OTHER = 2
@@ -140,7 +140,7 @@ def tokenize_conj_movie_other (text):
         # token[i] is a non-movie segment of words
         word_segment = tokens[i]
 
-        # tokenize by conjunctions, i.e. create tokens of 
+        # tokenize by conjunctions, i.e. create tokens of
         # [<non-conj-words>, <conj>, <non-conj-words>, ...]
         word_tokens = word_segment.split()
         string_builder = []
@@ -176,9 +176,11 @@ def tokenize_conj_movie_other (text):
 
     return tagged_tokens
 
-# Used for extracting titles from user input when no quotation marks are used.
-# Attempts to match movie_title to input_text word-by-word using a 'common
-# substring' algorithm (words don't need to be consecutive)
+"""
+Used for extracting titles from user input when no quotation marks are used.
+Attempts to match movie_title to input_text word-by-word using a 'common
+substring' algorithm (words don't need to be consecutive)
+"""
 def extract_title_by_word(movie_title, input_text):
     mt_tks = movie_title.split()
     it_tks = input_text.split()
@@ -189,7 +191,7 @@ def extract_title_by_word(movie_title, input_text):
         it_word = it_tks[i]
         mt_word = mt_tks[mt_index]
 
-        
+
         # Attempts to match last word of title in the case where input has ending punctuation
         if mt_index == (len(mt_tks) - 1):
             if not it_word[-1].isalnum() and it_word[-1] != mt_word[-1]:
@@ -288,7 +290,9 @@ def getResponse(corpus):
     index = random.randint(0, len(corpus) - 1)
     return corpus[index]
 
-# Concatenates a list of titles gramatically using the specified conjuction
+"""
+Concatenates a list of titles gramatically using the specified conjuction
+"""
 def concatenate_titles(titles, final_conj):
     if len(titles) == 1:
         return titles[0]

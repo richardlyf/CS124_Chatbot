@@ -13,6 +13,9 @@ from deps import lib
 # Edit distance allowed for a movie title match
 EDIT_DIST = 3
 
+# Number of recommendations Marvin will suggest
+NUM_REC = 5
+
 # Corpuses for different responses
 # Opening greeting
 greeting_corp = [
@@ -40,7 +43,7 @@ spell_corrected_corp_single_error = [
 ]
 
 spell_corrected_corp_single_no = [
-"""OK, so you weren't talking about {} after all. 
+"""OK, so you weren't talking about {} after all.
 In that case, please check your spelling and repeat your preference, or try talking about another movie!"""
 ]
 
@@ -87,10 +90,10 @@ class Chatbot:
 
       # Vector that keeps track of user movie preference
       self.user_ratings = np.zeros(len(self.titles))
-      
+
       # Flag that user can update by talking to the chatbot. Set to false when the user asks for a recommendation
       # self.add_review = True
-      
+
       # Becomes true once the user's made 5 recommendations.
       self.can_recommend = False
 
@@ -147,7 +150,7 @@ class Chatbot:
       # possibly calling other functions. Although modular code is not graded,    #
       # it is highly recommended.                                                 #
       #############################################################################
-      
+
       # Handle spell correction response first.
       if self.creative and self.spell_correction_answer:
         self.spell_correction_answer = False
@@ -157,7 +160,7 @@ class Chatbot:
       elif self.can_recommend and "recommend" in line.lower():
         # Recommend movie(s).
         response = "Here are the top 5 recommendations I have for you: \n"
-        rec_indices = self.recommend(self.user_ratings, self.ratings, k=5, creative=self.creative)
+        rec_indices = self.recommend(self.user_ratings, self.ratings, k=NUM_REC, creative=self.creative)
         recs = lib.extract_movies_using_indices(self.titles, rec_indices)
         response += ', '.join(recs) + '\n Feel free to add more reviews so I can make better recommendations.'
 
@@ -183,8 +186,10 @@ class Chatbot:
 
       return response
 
-    # Handles the user's response to a movie-title spelling correction confirmation.
     def process_spell_correction_response(self, line):
+      """
+      Handles the user's response to a movie-title spelling correction confirmation.
+      """
       # Check if responding to a previous spell correction question.
       has_y = 'y' in line.lower()
       has_n = 'n' in line.lower()
@@ -192,8 +197,8 @@ class Chatbot:
       if has_y and not has_n:
         # Yes
         return self.process_movie_preference (
-          self.spell_correction_movie_index, 
-          self.spell_correction_movie_title, 
+          self.spell_correction_movie_index,
+          self.spell_correction_movie_title,
           self.spell_correction_review
         )
       elif has_n and not has_y:
@@ -219,6 +224,7 @@ class Chatbot:
       # Extract titles from user input.
       titles = self.extract_titles(line)
 
+      # No titles are extracted
       if len(titles) == 0:
         if self.creative:
           # parse input and see if we can generate some arbitrary response
@@ -241,7 +247,7 @@ class Chatbot:
             return self.process_multi_titles(line)
           else:
             return "I didn't catch that. Did you talk about exactly one movie? Remember to put the movie title in quotes."
-          
+
       title = titles[0]
 
       # Search for a matching movie.
@@ -279,13 +285,17 @@ class Chatbot:
           return lib.getResponse(multi_movie_corp).format(title, formatted_movies)
 
       return self.process_movie_preference(movie_index[0], movies[0], line)
-      
-    # Generates some arbitrary response depending on user input
+
     def generate_arbitrary_response(self, line):
+      """
+      Generates some arbitrary response depending on user input
+      """
       return "<TODO: GENERATE SOME ARBITRARY RESPONSE>"
 
-    # Handles the case where the user supplies multiple movie titles.
     def process_multi_titles(self, line):
+      """
+      Handles the case where the user supplies multiple movie titles.
+      """
       movie_sentiments = self.extract_sentiment_for_movies(line)
       pos_titles = []
       neg_titles = []
@@ -333,15 +343,15 @@ class Chatbot:
           + " {} ".format(lib.concatenate_titles(unprocessable_titles, 'or'))
           + "- Please check your spelling or try specifying the year,"
           + " e.g. \"Titanic (1997)\".")
-   
+
       return response
 
 
-    """ Performs sentiment extraction on the user's review and updates the 
-    user_rating for the specified movie. Returns the bot's response to the
-    user as implicit confirmation.
-    """
     def process_movie_preference (self, movie_index, movie_title, review, usr_senti=None):
+      """ Performs sentiment extraction on the user's review and updates the
+      user_rating for the specified movie. Returns the bot's response to the
+      user as implicit confirmation.
+      """
       if usr_senti is None:
         sentiment = self.extract_sentiment(review)
       else:
@@ -464,7 +474,10 @@ class Chatbot:
             # No spelling correction
             if self.creative:
               # Handle differing capitalizations
-              if movie_title.lower() == entry_title.lower():
+              # If user inputs "scream", should find all movies containing "scream" but not "screams" / "screaming"
+              title_pos = entry_title.lower().find(movie_title.lower())
+              title_end_pos = title_pos + len(movie_title)
+              if title_pos != -1 and (title_end_pos == len(entry_title) or not entry_title[title_end_pos].isalpha()):
                   movies.append(i)
             else:
               if movie_title == entry_title:
@@ -658,7 +671,7 @@ class Chatbot:
       :param candidates: a list of movie indices
       :returns: a list of indices corresponding to the movies identified by the clarification
       """
-      pass
+      clarification = clarification.lower()
 
 
     #############################################################################
