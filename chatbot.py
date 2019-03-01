@@ -10,6 +10,7 @@ disambiguate_extracted_titles = True
 use_title_spell_correction = False
 use_multiple_movies_sentiment_extraction = False
 use_arbitrary_input_response = False
+use_understand_previous_references = False
 
 import movielens
 
@@ -740,7 +741,7 @@ class Chatbot:
           self.last_senti = posCount
 
       # Try to utilize memory of the last review to make a decision about sentiment
-      elif self.creative and self.last_senti != 0:
+      elif use_understand_previous_references and self.creative and self.last_senti != 0:
           posCount = self.last_senti
           negations.append('but')
           for neg_conj in negations:
@@ -1053,7 +1054,7 @@ class Chatbot:
         Flag: disambiguate_extracted_titles
 
       - Understanding references to things said previously
-        Flag: <NO FLAG>, specifiying the '--creative' flag enables this feature
+        Flag: use_understand_previous_references
         E.g. User: 'I saw "Avatar"', Marvin: 'What did you think of "Avatar"?',
         User: 'I liked it.', Marvin: 'You liked "Avatar"'.
         E.g. User: 'I liked "Avatar"', Marvin: 'You liked "Avatar!"', User: 'But
