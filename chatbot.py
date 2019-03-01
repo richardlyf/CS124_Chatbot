@@ -750,6 +750,9 @@ class Chatbot:
                   posCount *= -1
                   break
 
+          # Only allow referencing memory once (no chaining)
+          self.last_senti = 0
+
       #print(posCount)
       return posCount
 
