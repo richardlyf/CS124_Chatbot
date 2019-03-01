@@ -69,8 +69,8 @@ It would be great if you can clarify. Or you can just answer no and we can move 
 pos_movie_corp = [
 "You liked {}, got it!",
 "Ok, so you enjoyed {}.",
-"{}, good choice!",
-"Oh I remember liking {} too. Great minds think alike huh?"
+"Oh I remember liking {} too. Great minds think alike huh?",
+"You liked {}? Good choice!"
 ]
 
 neutral_movie_corp = [
